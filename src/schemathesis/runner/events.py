@@ -14,38 +14,38 @@ from ..schemas import BaseSchema
 class ExecutionContext:
     """Storage for the current context of the execution."""
 
-    hypothesis_output: List[str] = attr.ib(factory=list)  # pragma: no mutate
-    workers_num: int = attr.ib(default=1)  # pragma: no mutate
-    endpoints_processed: int = attr.ib(default=0)  # pragma: no mutate
-    current_line_length: int = attr.ib(default=0)  # pragma: no mutate
-    terminal_size: os.terminal_size = attr.ib(factory=shutil.get_terminal_size)  # pragma: no mutate
+    hypothesis_output = attr.ib(factory=list, type=List[str])  # pragma: no mutate
+    workers_num = attr.ib(default=1, type=int)  # pragma: no mutate
+    endpoints_processed = attr.ib(default=0, type=int)  # pragma: no mutate
+    current_line_length = attr.ib(default=0, type=int)  # pragma: no mutate
+    terminal_size = attr.ib(factory=shutil.get_terminal_size, type=os.terminal_size)  # pragma: no mutate
 
 
 @attr.s()  # pragma: no mutate
 class ExecutionEvent:
-    results: TestResultSet = attr.ib()  # pragma: no mutate
-    schema: BaseSchema = attr.ib()  # pragma: no mutate
+    results = attr.ib(type=TestResultSet)  # pragma: no mutate
+    schema = attr.ib(type=BaseSchema)  # pragma: no mutate
 
 
 @attr.s(slots=True)  # pragma: no mutate
 class Initialized(ExecutionEvent):
     """Runner is initialized, settings are prepared, requests session is ready."""
 
-    checks: Iterable[Callable] = attr.ib()  # pragma: no mutate
-    hypothesis_settings: hypothesis.settings = attr.ib()  # pragma: no mutate
-    start_time: float = attr.ib(factory=time.time)
+    checks = attr.ib(type=Iterable[Callable])  # pragma: no mutate
+    hypothesis_settings = attr.ib(type=hypothesis.settings)  # pragma: no mutate
+    start_time = attr.ib(factory=time.time, type=float)
 
 
 @attr.s(slots=True)  # pragma: no mutate
 class BeforeExecution(ExecutionEvent):
-    endpoint: Endpoint = attr.ib()  # pragma: no mutate
+    endpoint = attr.ib(type=Endpoint)  # pragma: no mutate
 
 
 @attr.s(slots=True)  # pragma: no mutate
 class AfterExecution(ExecutionEvent):
-    endpoint: Endpoint = attr.ib()  # pragma: no mutate
-    status: Status = attr.ib()  # pragma: no mutate
-    hypothesis_output: List[str] = attr.ib(factory=list)  # pragma: no mutate
+    endpoint = attr.ib(type=Endpoint)  # pragma: no mutate
+    status = attr.ib(type=Status)  # pragma: no mutate
+    hypothesis_output = attr.ib(factory=list, type=List[str])  # pragma: no mutate
 
 
 @attr.s(slots=True)  # pragma: no mutate
@@ -55,4 +55,4 @@ class Interrupted(ExecutionEvent):
 
 @attr.s(slots=True)  # pragma: no mutate
 class Finished(ExecutionEvent):
-    running_time: float = attr.ib()
+    running_time = attr.ib(type=float)

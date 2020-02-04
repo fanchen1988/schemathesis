@@ -226,15 +226,15 @@ def abort_on_network_errors() -> Generator[None, None, None]:
     try:
         yield
     except exceptions.ConnectionError as exc:
-        click.secho(f"Failed to load schema from {exc.request.url}", fg="red")
+        click.secho("Failed to load schema from {url}".format(url=exc.request.url), fg="red")
         message = utils.format_exception(exc)
-        click.secho(f"Error: {message}", fg="red")
+        click.secho("Error: {message}".format(message=message), fg="red")
         raise click.Abort
     except HTTPError as exc:
         if exc.response.status_code == 404:
-            click.secho(f"Schema was not found at {exc.url}", fg="red")
+            click.secho("Schema was not found at {url}".format(url=exc.url), fg="red")
             raise click.Abort
-        click.secho(f"Failed to load schema, code {exc.response.status_code} was returned from {exc.url}", fg="red")
+        click.secho("Failed to load schema, code {status_code} was returned from {url}".format(status_code=exc.response.status_code, url=exc.url), fg="red")
         raise click.Abort
 
 

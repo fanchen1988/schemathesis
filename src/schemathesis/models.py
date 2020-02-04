@@ -24,13 +24,13 @@ if TYPE_CHECKING:
 class Case:
     """A single test case parameters."""
 
-    endpoint: "Endpoint" = attr.ib()  # pragma: no mutate
-    path_parameters: Optional[PathParameters] = attr.ib(default=None)  # pragma: no mutate
-    headers: Optional[Headers] = attr.ib(default=None)  # pragma: no mutate
-    cookies: Optional[Cookies] = attr.ib(default=None)  # pragma: no mutate
-    query: Optional[Query] = attr.ib(default=None)  # pragma: no mutate
-    body: Optional[Body] = attr.ib(default=None)  # pragma: no mutate
-    form_data: Optional[FormData] = attr.ib(default=None)  # pragma: no mutate
+    endpoint = attr.ib(type="Endpoint")  # pragma: no mutate
+    path_parameters = attr.ib(default=None, type=Optional[PathParameters])  # pragma: no mutate
+    headers = attr.ib(default=None, type=Optional[Headers])  # pragma: no mutate
+    cookies = attr.ib(default=None, type=Optional[Cookies])  # pragma: no mutate
+    query = attr.ib(default=None, type=Optional[Query])  # pragma: no mutate
+    body = attr.ib(default=None, type=Optional[Body])  # pragma: no mutate
+    form_data = attr.ib(default=None, type=Optional[FormData])  # pragma: no mutate
 
     @property
     def path(self) -> str:
@@ -52,7 +52,7 @@ class Case:
     def formatted_path(self) -> str:
         # pylint: disable=not-a-mapping
         try:
-            return self.path.format(**self.path_parameters or {})
+            return self.path.format(**(self.path_parameters or {}))
         except KeyError:
             raise InvalidSchema("Missing required property `required: true`")
 
@@ -63,18 +63,18 @@ class Case:
         method = kwargs["method"].lower()
 
         def are_defaults(key: str, value: Optional[Dict]) -> bool:
-            default_value: Optional[Dict] = {"json": None}.get(key, None)
+            default_value = {"json": None}.get(key, None)
             return value == default_value
 
         printed_kwargs = ", ".join(
-            f"{key}={value}"
+            "{key}={value}".format(key=key, value=value)
             for key, value in kwargs.items()
             if key not in ("method", "url") and not are_defaults(key, value)
         )
-        args_repr = f"'{kwargs['url']}'"
+        args_repr = "'{url}'".format(url=kwargs['url'])
         if printed_kwargs:
-            args_repr += f", {printed_kwargs}"
-        return f"requests.{method}({args_repr})"
+            args_repr += ", {printed_kwargs}".format(printed_kwargs=printed_kwargs)
+        return "requests.{method}({args_repr})".format(method=method, args_repr=args_repr)
 
     def _get_base_url(self, base_url: Optional[str] = None) -> str:
         if base_url is None:
@@ -93,7 +93,6 @@ class Case:
         formatted_path = self.formatted_path.lstrip("/")  # pragma: no mutate
         url = urljoin(base_url + "/", formatted_path)
         # Form data and body are mutually exclusive
-        extra: Dict[str, Optional[Union[Dict, bytes]]]
         if self.form_data:
             extra = {"files": self.form_data}
         elif isinstance(self.body, bytes):
@@ -129,7 +128,6 @@ class Case:
     def as_werkzeug_kwargs(self) -> Dict[str, Any]:
         """Convert the case into a dictionary acceptable by werkzeug.Client."""
         headers = self.headers
-        extra: Dict[str, Optional[Union[Dict, bytes]]]
         if self.form_data:
             extra = {"data": self.form_data}
             headers = headers or {}
@@ -197,18 +195,18 @@ def empty_object() -> Dict[str, Any]:
 class Endpoint:
     """A container that could be used for test cases generation."""
 
-    path: str = attr.ib()  # pragma: no mutate
-    method: str = attr.ib()  # pragma: no mutate
-    definition: Dict[str, Any] = attr.ib()  # pragma: no mutate
-    schema: "BaseSchema" = attr.ib()  # pragma: no mutate
-    app: Any = attr.ib(default=None)  # pragma: no mutate
-    base_url: Optional[str] = attr.ib(default=None)  # pragma: no mutate
-    path_parameters: Optional[PathParameters] = attr.ib(default=None)  # pragma: no mutate
-    headers: Optional[Headers] = attr.ib(default=None)  # pragma: no mutate
-    cookies: Optional[Cookies] = attr.ib(default=None)  # pragma: no mutate
-    query: Optional[Query] = attr.ib(default=None)  # pragma: no mutate
-    body: Optional[Body] = attr.ib(default=None)  # pragma: no mutate
-    form_data: Optional[FormData] = attr.ib(default=None)  # pragma: no mutate
+    path = attr.ib(type=str)  # pragma: no mutate
+    method = attr.ib(type=str)  # pragma: no mutate
+    definition = attr.ib(type=Dict[str, Any])  # pragma: no mutate
+    schema = attr.ib(type="BaseSchema")  # pragma: no mutate
+    app = attr.ib(default=None, type=Any)  # pragma: no mutate
+    base_url = attr.ib(default=None, type=Optional[str])  # pragma: no mutate
+    path_parameters = attr.ib(default=None, type=Optional[PathParameters])  # pragma: no mutate
+    headers = attr.ib(default=None, type=Optional[Headers])  # pragma: no mutate
+    cookies = attr.ib(default=None, type=Optional[Cookies])  # pragma: no mutate
+    query = attr.ib(default=None, type=Optional[Query])  # pragma: no mutate
+    body = attr.ib(default=None, type=Optional[Body])  # pragma: no mutate
+    form_data = attr.ib(default=None, type=Optional[FormData])  # pragma: no mutate
 
     def as_strategy(self) -> SearchStrategy:
         from ._hypothesis import get_case_strategy  # pylint: disable=import-outside-toplevel
@@ -228,22 +226,22 @@ class Status(IntEnum):
 class Check:
     """Single check run result."""
 
-    name: str = attr.ib()  # pragma: no mutate
-    value: Status = attr.ib()  # pragma: no mutate
-    example: Optional[Case] = attr.ib(default=None)  # pragma: no mutate
-    message: Optional[str] = attr.ib(default=None)  # pragma: no mutate
+    name = attr.ib(type=str)  # pragma: no mutate
+    value = attr.ib(type=Status)  # pragma: no mutate
+    example = attr.ib(default=None, type=Optional[Case])  # pragma: no mutate
+    message = attr.ib(default=None, type=Optional[str])  # pragma: no mutate
 
 
 @attr.s(slots=True, repr=False)  # pragma: no mutate
 class TestResult:
     """Result of a single test."""
 
-    endpoint: Endpoint = attr.ib()  # pragma: no mutate
-    checks: List[Check] = attr.ib(factory=list)  # pragma: no mutate
-    errors: List[Tuple[Exception, Optional[Case]]] = attr.ib(factory=list)  # pragma: no mutate
-    logs: List[LogRecord] = attr.ib(factory=list)  # pragma: no mutate
-    is_errored: bool = attr.ib(default=False)  # pragma: no mutate
-    seed: Optional[int] = attr.ib(default=None)  # pragma: no mutate
+    endpoint = attr.ib(type=Endpoint)  # pragma: no mutate
+    checks = attr.ib(factory=list, type=List[Check])  # pragma: no mutate
+    errors = attr.ib(factory=list, type=List[Tuple[Exception, Optional[Case]]])  # pragma: no mutate
+    logs = attr.ib(factory=list, type=List[LogRecord])  # pragma: no mutate
+    is_errored = attr.ib(default=False, type=bool)  # pragma: no mutate
+    seed = attr.ib(default=None, type=Optional[int])  # pragma: no mutate
 
     def mark_errored(self) -> None:
         self.is_errored = True
@@ -274,7 +272,7 @@ class TestResult:
 class TestResultSet:
     """Set of multiple test results."""
 
-    results: List[TestResult] = attr.ib(factory=list)  # pragma: no mutate
+    results = attr.ib(factory=list, type=List[TestResult])  # pragma: no mutate
 
     def __iter__(self) -> Iterator[TestResult]:
         return iter(self.results)
@@ -317,7 +315,7 @@ class TestResultSet:
     @property
     def total(self) -> Dict[str, Dict[Union[str, Status], int]]:
         """Aggregated statistic about test results."""
-        output: Dict[str, Dict[Union[str, Status], int]] = {}
+        output = {}
         for item in self.results:
             for check in item.checks:
                 output.setdefault(check.name, Counter())

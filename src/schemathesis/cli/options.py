@@ -19,7 +19,7 @@ class CSVOption(click.Choice):
         # Sort to keep the error output consistent with the passed values
         sorted_options = ", ".join(sorted(invalid_options, key=items.index))
         available_options = ", ".join(self.choices)
-        self.fail(f"invalid choice(s): {sorted_options}. Choose from {available_options}")
+        self.fail("invalid choice(s): {sorted_options}. Choose from {available_options}".format(sorted_options=sorted_options, available_options=available_options))
 
 
 class NotSet:

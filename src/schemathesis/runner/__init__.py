@@ -40,15 +40,15 @@ def get_hypothesis_settings(hypothesis_options: Optional[Dict[str, Any]] = None)
 # pylint: disable=too-many-instance-attributes
 @attr.s
 class BaseRunner:
-    schema: BaseSchema = attr.ib()
-    checks: Iterable[Check] = attr.ib()
-    hypothesis_settings: hypothesis.settings = attr.ib(converter=get_hypothesis_settings)
-    auth: Optional[RawAuth] = attr.ib(default=None)
-    auth_type: Optional[str] = attr.ib(default=None)
-    headers: Optional[Dict[str, Any]] = attr.ib(default=None)
-    request_timeout: Optional[int] = attr.ib(default=None)
-    seed: Optional[int] = attr.ib(default=None)
-    exit_first: bool = attr.ib(default=False)
+    schema = attr.ib(type=BaseSchema)
+    checks = attr.ib(type=Iterable[Check])
+    hypothesis_settings = attr.ib(converter=get_hypothesis_settings, type=hypothesis.settings)
+    auth = attr.ib(default=None, type=Optional[RawAuth])
+    auth_type = attr.ib(default=None, type=Optional[str])
+    headers = attr.ib(default=None, type=Optional[Dict[str, Any]])
+    request_timeout = attr.ib(default=None, type=Optional[int])
+    seed = attr.ib(default=None, type=Optional[int])
+    exit_first = attr.ib(default=False, type=bool)
 
     def execute(self,) -> Generator[events.ExecutionEvent, None, None]:
         """Common logic for all runners."""
@@ -124,7 +124,7 @@ def _run_task(
     settings: hypothesis.settings,
     seed: Optional[int],
     results: TestResultSet,
-    **kwargs: Any,
+    **kwargs: Any
 ) -> None:
     # pylint: disable=too-many-arguments
     with capture_hypothesis_output():
@@ -187,13 +187,13 @@ class ThreadInterrupted(Exception):
 class ThreadPoolRunner(BaseRunner):
     """Spread different tests among multiple worker threads."""
 
-    workers_num: int = attr.ib(default=2)
+    workers_num = attr.ib(default=2, type=int)
 
     def _execute(self, results: TestResultSet) -> Generator[events.ExecutionEvent, None, None]:
         """All events come from a queue where different workers push their events."""
         tasks_queue = self._get_tasks_queue()
         # Events are pushed by workers via a separate queue
-        events_queue: Queue = Queue()
+        events_queue = Queue()
         workers = self._init_workers(tasks_queue, events_queue, results)
 
         def stop_workers() -> None:
@@ -227,7 +227,7 @@ class ThreadPoolRunner(BaseRunner):
 
     def _get_tasks_queue(self) -> Queue:
         """All endpoints are distributed among all workers via a queue."""
-        tasks_queue: Queue = Queue()
+        tasks_queue = Queue()
         tasks_queue.queue.extend(self.schema.get_all_endpoints())
         return tasks_queue
 
@@ -290,13 +290,11 @@ def execute_from_schema(
     headers: Optional[Dict[str, Any]] = None,
     request_timeout: Optional[int] = None,
     seed: Optional[int] = None,
-    exit_first: bool = False,
-) -> Generator[events.ExecutionEvent, None, None]:
+    exit_first: bool = False) -> Generator[events.ExecutionEvent, None, None]:
     """Execute tests for the given schema.
 
     Provides the main testing loop and preparation step.
     """
-    runner: BaseRunner
     if workers_num > 1:
         if schema.app:
             runner = ThreadPoolWSGIRunner(
@@ -356,13 +354,12 @@ def run_test(
     test: Union[Callable, InvalidSchema],
     checks: Iterable[Check],
     results: TestResultSet,
-    **kwargs: Any,
-) -> Generator[events.ExecutionEvent, None, None]:
+    **kwargs: Any) -> Generator[events.ExecutionEvent, None, None]:
     """A single test run with all error handling needed."""
     # pylint: disable=too-many-arguments
     result = TestResult(endpoint=endpoint)
     yield events.BeforeExecution(results=results, schema=schema, endpoint=endpoint)
-    hypothesis_output: List[str] = []
+    hypothesis_output = []
     try:
         if isinstance(test, InvalidSchema):
             status = Status.error
@@ -513,7 +510,7 @@ def _run_checks(case: Case, checks: Iterable[Check], result: TestResult, respons
 
 def prepare_timeout(timeout: Optional[int]) -> Optional[float]:
     """Request timeout is in milliseconds, but `requests` uses seconds."""
-    output: Optional[Union[int, float]] = timeout
+    output = timeout
     if timeout is not None:
         output = timeout / 1000
     return output

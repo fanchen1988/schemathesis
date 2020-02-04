@@ -26,8 +26,7 @@ def from_path(
     tag: Optional[Filter] = None,
     *,
     app: Any = None,
-    validate_schema: bool = True,
-) -> BaseSchema:
+    validate_schema: bool = True) -> BaseSchema:
     """Load a file from OS path and parse to schema instance."""
     with open(path) as fd:
         return from_file(
@@ -51,7 +50,7 @@ def from_uri(
     *,
     app: Any = None,
     validate_schema: bool = True,
-    **kwargs: Any,
+    **kwargs: Any
 ) -> BaseSchema:
     """Load a remote resource and parse to schema instance."""
     kwargs.setdefault("headers", {}).setdefault("User-Agent", USER_AGENT)
@@ -83,8 +82,7 @@ def from_file(
     tag: Optional[Filter] = None,
     *,
     app: Any = None,
-    validate_schema: bool = True,
-) -> BaseSchema:
+    validate_schema: bool = True) -> BaseSchema:
     """Load a file content and parse to schema instance.
 
     `file` could be a file descriptor, string or bytes.
@@ -111,8 +109,7 @@ def from_dict(
     tag: Optional[Filter] = None,
     *,
     app: Any = None,
-    validate_schema: bool = True,
-) -> BaseSchema:
+    validate_schema: bool = True) -> BaseSchema:
     """Get a proper abstraction for the given raw schema."""
     if "swagger" in raw_schema:
         _maybe_validate_schema(raw_schema, spec_schemas.SWAGGER_20, validate_schema)
@@ -187,12 +184,11 @@ def from_aiohttp(
     endpoint: Optional[Filter] = None,
     tag: Optional[Filter] = None,
     *,
-    validate_schema: bool = True,
-) -> BaseSchema:
+    validate_schema: bool = True) -> BaseSchema:
     from .extra._aiohttp import run_server  # pylint: disable=import-outside-toplevel
 
     port = run_server(app)
-    app_url = f"http://127.0.0.1:{port}/"
+    app_url = "http://127.0.0.1:{port}/".format(port=port)
     url = urljoin(app_url, schema_path)
     if not base_url:
         base_url = app_url

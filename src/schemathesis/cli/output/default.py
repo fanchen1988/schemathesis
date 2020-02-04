@@ -21,20 +21,20 @@ def get_terminal_width() -> int:
 
 def display_section_name(title: str, separator: str = "=", **kwargs: Any) -> None:
     """Print section name with separators in terminal with the given title nicely centered."""
-    message = f" {title} ".center(get_terminal_width(), separator)
+    message = " {title} ".format(title=title).center(get_terminal_width(), separator)
     kwargs.setdefault("bold", True)
     click.secho(message, **kwargs)
 
 
 def display_subsection(result: TestResult, color: Optional[str] = "red") -> None:
-    section_name = f"{result.endpoint.method}: {result.endpoint.path}"
+    section_name = "{method}: {path}".format(method=result.endpoint.method, path=result.endpoint.path)
     display_section_name(section_name, "_", fg=color)
 
 
 def get_percentage(position: int, length: int) -> str:
     """Format completion percentage in square brackets."""
-    percentage_message = f"{position * 100 // length}%".rjust(4)
-    return f"[{percentage_message}]"
+    percentage_message = "{perct}%".format(perct=position * 100 // length).rjust(4)
+    return "[{percentage_message}]".format(percentage_message=percentage_message)
 
 
 def display_execution_result(context: events.ExecutionContext, event: events.AfterExecution) -> None:
@@ -53,7 +53,7 @@ def display_percentage(context: events.ExecutionContext, event: events.AfterExec
     styled = click.style(current_percentage, fg="cyan")
     # Total length of the message so it will fill to the right border of the terminal minus padding
     length = get_terminal_width() - context.current_line_length + len(styled) - len(current_percentage) - padding
-    template = f"{{:>{length}}}"
+    template = "{{:>{length}}}".format(length=length)
     click.echo(template.format(styled))
 
 
@@ -67,13 +67,13 @@ def get_summary_message_parts(results: TestResultSet) -> List[str]:
     parts = []
     passed = results.passed_count
     if passed:
-        parts.append(f"{passed} passed")
+        parts.append("{passed} passed".format(passed=passed))
     failed = results.failed_count
     if failed:
-        parts.append(f"{failed} failed")
+        parts.append("{failed} failed".format(failed=failed))
     errored = results.errored_count
     if errored:
-        parts.append(f"{errored} errored")
+        parts.append("{errored} errored".format(errored=errored))
     return parts
 
 
@@ -84,7 +84,7 @@ def get_summary_output(event: events.Finished) -> Tuple[str, str, int]:
         color = "yellow"
         status_code = 0
     else:
-        message = f'{", ".join(parts)} in {event.running_time:.2f}s'
+        message = '{parts} in {running_time:.2f}s'.format(parts=", ".join(parts), running_time=event.running_time)
         if event.results.has_failures or event.results.has_errors:
             color = "red"
             status_code = 1
@@ -142,9 +142,8 @@ def display_failures_for_single_test(result: TestResult) -> None:
     display_subsection(result)
     checks = _get_unique_failures(result.checks)
     for idx, check in enumerate(checks, 1):
-        message: Optional[str]
         if check.message:
-            message = f"{idx}. {check.message}"
+            message = "{idx}. {message}".format(idx=idx, message=check.message)
         else:
             message = None
         example = cast(Case, check.example)  # filtered in `_get_unique_failures`
@@ -156,7 +155,7 @@ def display_failures_for_single_test(result: TestResult) -> None:
 
 def _get_unique_failures(checks: List[Check]) -> List[Check]:
     """Return only unique checks that should be displayed in the output."""
-    seen: Set[Tuple[str, Optional[str]]] = set()
+    seen = set()
     unique_checks = []
     for check in reversed(checks):
         # There are also could be checks that didn't fail
@@ -178,16 +177,16 @@ def display_example(
         if attribute.name not in ("path", "method", "base_url", "app", "endpoint")
     }
     max_length = max(map(len, output))
-    template = f"{{:<{max_length}}} : {{}}"
+    template = "{{:<{max_length}}} : {{}}".format(max_length=max_length)
     if check_name is not None:
         click.secho(template.format("Check", check_name), fg="red")
     for key, value in output.items():
         if (key == "Body" and value is not None) or value not in (None, {}):
             click.secho(template.format(key, value), fg="red")
     click.echo()
-    click.secho(f"Run this Python code to reproduce this failure: \n\n    {case.get_code_to_reproduce()}", fg="red")
+    click.secho("Run this Python code to reproduce this failure: \n\n    {code}".format(code=case.get_code_to_reproduce()), fg="red")
     if seed is not None:
-        click.secho(f"\nOr add this option to your command line parameters: --hypothesis-seed={seed}", fg="red")
+        click.secho("\nOr add this option to your command line parameters: --hypothesis-seed={seed}".format(seed=seed), fg="red")
 
 
 def make_verbose_name(attribute: Attribute) -> str:
@@ -226,7 +225,7 @@ def display_statistic(statistic: TestResultSet) -> None:
     col2_len = len(str(max(total.values(), key=lambda v: v["total"])["total"])) * 2 + padding
     col3_len = padding
 
-    template = f"{{:{col1_len}}}{{:{col2_len}}}{{:{col3_len}}}"
+    template = "{{:{col1_len}}}{{:{col2_len}}}{{:{col3_len}}}".format(col1_len=col1_len, col2_len=col2_len, col3_len=col3_len)
 
     for check_name, results in total.items():
         display_check_result(check_name, results, template)
@@ -244,7 +243,7 @@ def display_check_result(check_name: str, results: Dict[Union[str, Status], int]
     total = results.get("total", 0)
     click.echo(
         template.format(
-            click.style(check_name, bold=True), f"{success} / {total} passed", click.style(verdict, fg=color, bold=True)
+            click.style(check_name, bold=True), "{success} / {total} passed".format(success=success, total=total), click.style(verdict, fg=color, bold=True)
         )
     )
 
@@ -253,33 +252,33 @@ def handle_initialized(context: events.ExecutionContext, event: events.Initializ
     """Display information about the test session."""
     display_section_name("Schemathesis test session starts")
     versions = (
-        f"platform {platform.system()} -- "
-        f"Python {platform.python_version()}, "
-        f"schemathesis-{__version__}, "
-        f"hypothesis-{metadata.version('hypothesis')}, "
-        f"hypothesis_jsonschema-{metadata.version('hypothesis_jsonschema')}, "
-        f"jsonschema-{metadata.version('jsonschema')}"
-    )
+        "platform {system} -- "
+        "Python {py_version}, "
+        "schemathesis-{version}, "
+        "hypothesis-{hy_version}, "
+        "hypothesis_jsonschema-{hyjs_version}, "
+        "jsonschema-{js_version}"
+    ).format(system=platform.system(), py_version=platform.python_version(), version=__version__, hy_version=metadata.version('hypothesis'), hyjs_version=metadata.version('hypothesis_jsonschema'), js_version=metadata.version('jsonschema'))
     click.echo(versions)
-    click.echo(f"rootdir: {os.getcwd()}")
+    click.echo("rootdir: {cwd}".format(cwd=os.getcwd()))
     click.echo(
-        f"hypothesis profile '{settings._current_profile}' "  # type: ignore
-        f"-> {settings.get_profile(settings._current_profile).show_changed()}"
-    )
+        "hypothesis profile '{cur_profile}' "  # type: ignore
+        "-> {changed}"
+    ).format(cur_profile=settings._current_profile, changed=settings.get_profile(settings._current_profile).show_changed())
     if event.schema.location is not None:
-        click.echo(f"Schema location: {event.schema.location}")
+        click.echo("Schema location: {location}".format(location=event.schema.location))
     if event.schema.base_url is not None:
-        click.echo(f"Base URL: {event.schema.base_url}")
-    click.echo(f"Specification version: {event.schema.verbose_name}")
-    click.echo(f"Workers: {context.workers_num}")
-    click.secho(f"collected endpoints: {event.schema.endpoints_count}", bold=True)
+        click.echo("Base URL: {base_url}".format(base_url=event.schema.base_url))
+    click.echo("Specification version: {verbose_name}".format(verbose_name=event.schema.verbose_name))
+    click.echo("Workers: {workers_num}".format(workers_num=context.workers_num))
+    click.secho("collected endpoints: {endpoints_count}".format(endpoints_count=event.schema.endpoints_count), bold=True)
     if event.schema.endpoints_count >= 1:
         click.echo()
 
 
 def handle_before_execution(context: events.ExecutionContext, event: events.BeforeExecution) -> None:
     """Display what method / endpoint will be tested next."""
-    message = f"{event.endpoint.method} {event.endpoint.path} "
+    message = "{method} {path} ".format(method=event.endpoint.method, path=event.endpoint.path)
     context.current_line_length = len(message)
     click.echo(message, nl=False)
 

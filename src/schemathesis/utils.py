@@ -112,7 +112,7 @@ def are_content_types_equal(source: str, target: str) -> bool:
 
 def make_loader(*tags_to_remove: str) -> Type[yaml.SafeLoader]:
     """Create a YAML loader, that doesn't parse specific tokens into Python objects."""
-    cls: Type[yaml.SafeLoader] = type("YAMLLoader", (yaml.SafeLoader,), {})
+    cls = type("YAMLLoader", (yaml.SafeLoader,), {})
     cls.yaml_implicit_resolvers = {
         key: [(tag, regexp) for tag, regexp in mapping if tag not in tags_to_remove]
         for key, mapping in cls.yaml_implicit_resolvers.copy().items()

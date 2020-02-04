@@ -15,10 +15,10 @@ from .utils import NOT_SET
 
 @attr.s(slots=True)  # pragma: no mutate
 class LazySchema:
-    fixture_name: str = attr.ib()  # pragma: no mutate
-    method: Optional[Filter] = attr.ib(default=NOT_SET)  # pragma: no mutate
-    endpoint: Optional[Filter] = attr.ib(default=NOT_SET)  # pragma: no mutate
-    tag: Optional[Filter] = attr.ib(default=NOT_SET)  # pragma: no mutate
+    fixture_name = attr.ib(type=str)  # pragma: no mutate
+    method = attr.ib(default=NOT_SET, type=Optional[Filter])  # pragma: no mutate
+    endpoint = attr.ib(default=NOT_SET, type=Optional[Filter])  # pragma: no mutate
+    tag = attr.ib(default=NOT_SET, type=Optional[Filter])  # pragma: no mutate
 
     def parametrize(
         self, method: Optional[Filter] = NOT_SET, endpoint: Optional[Filter] = NOT_SET, tag: Optional[Filter] = NOT_SET
@@ -66,7 +66,7 @@ def get_test(test: Union[Callable, InvalidSchema]) -> Callable:
 
 def _get_node_name(node_id: str, endpoint: Endpoint) -> str:
     """Make a test node name. For example: test_api[GET:/v1/users]."""
-    return f"{node_id}[{endpoint.method}:{endpoint.path}]"
+    return "{node_id}[{method}:{path}]".format(node_id=node_id, method=endpoint.method, path=endpoint.path)
 
 
 def run_subtest(endpoint: Endpoint, fixtures: Dict[str, Any], sub_test: Callable, subtests: SubTests) -> None:
@@ -85,7 +85,7 @@ def get_schema(
     """Loads a schema from the fixture."""
     schema = request.getfixturevalue(name)
     if not isinstance(schema, BaseSchema):
-        raise ValueError(f"The given schema must be an instance of BaseSchema, got: {type(schema)}")
+        raise ValueError("The given schema must be an instance of BaseSchema, got: {schema_type}".format(schema_type=type(schema)))
     if method is NOT_SET:
         method = schema.method
     if endpoint is NOT_SET:

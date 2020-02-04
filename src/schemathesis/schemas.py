@@ -39,14 +39,14 @@ def load_file(location: str) -> Dict[str, Any]:
 
 @attr.s()  # pragma: no mutate
 class BaseSchema(Mapping):
-    raw_schema: Dict[str, Any] = attr.ib()  # pragma: no mutate
-    location: Optional[str] = attr.ib(default=None)  # pragma: no mutate
-    base_url: Optional[str] = attr.ib(default=None)  # pragma: no mutate
-    method: Optional[Filter] = attr.ib(default=None)  # pragma: no mutate
-    endpoint: Optional[Filter] = attr.ib(default=None)  # pragma: no mutate
-    tag: Optional[Filter] = attr.ib(default=None)  # pragma: no mutate
-    app: Any = attr.ib(default=None)  # pragma: no mutate
-    hooks: Dict[HookLocation, Hook] = attr.ib(factory=dict)  # pragma: no mutate
+    raw_schema = attr.ib(type=Dict[str, Any])  # pragma: no mutate
+    location = attr.ib(default=None, type=Optional[str])  # pragma: no mutate
+    base_url = attr.ib(default=None, type=Optional[str])  # pragma: no mutate
+    method = attr.ib(default=None, type=Optional[Filter])  # pragma: no mutate
+    endpoint = attr.ib(default=None, type=Optional[Filter])  # pragma: no mutate
+    tag = attr.ib(default=None, type=Optional[Filter])  # pragma: no mutate
+    app = attr.ib(default=None, type=Any)  # pragma: no mutate
+    hooks = attr.ib(factory=dict, type=Dict[HookLocation, Hook])  # pragma: no mutate
 
     def __iter__(self) -> Iterator[str]:
         return iter(self.endpoints)
@@ -91,7 +91,6 @@ class BaseSchema(Mapping):
         self, func: Callable, settings: Optional[hypothesis.settings] = None, seed: Optional[int] = None
     ) -> Generator[Tuple[Endpoint, Union[Callable, InvalidSchema]], None, None]:
         """Generate all endpoints and Hypothesis tests for them."""
-        test: Union[Callable, InvalidSchema]
         for endpoint in self.get_all_endpoints():
             test = make_test_or_exception(endpoint, func, settings, seed)
             yield endpoint, test
@@ -133,7 +132,7 @@ class SwaggerV20(BaseSchema):
 
     def __repr__(self) -> str:
         info = self.raw_schema["info"]
-        return f"{self.__class__.__name__} for {info['title']} ({info['version']})"
+        return "{cls_name} for {title} ({version})".format(cls_name=self.__class__.__name__, title=info['title'], version=info['version'])
 
     @property
     def spec_version(self) -> str:
@@ -141,12 +140,12 @@ class SwaggerV20(BaseSchema):
 
     @property
     def verbose_name(self) -> str:
-        return f"Swagger {self.spec_version}"
+        return "Swagger {spec_version}".format(spec_version=self.spec_version)
 
     @property
     def base_path(self) -> str:
         """Base path for the schema."""
-        path: str = self.raw_schema.get("basePath", "/")  # pragma: no mutate
+        path = self.raw_schema.get("basePath", "/")  # pragma: no mutate
         if not path.endswith("/"):
             path += "/"
         return path
@@ -283,7 +282,7 @@ class OpenApi30(SwaggerV20):  # pylint: disable=too-many-ancestors
 
     @property
     def verbose_name(self) -> str:
-        return f"Open API {self.spec_version}"
+        return "Open API {spec_version}".format(spec_version=self.spec_version)
 
     @property
     def base_path(self) -> str:
@@ -354,7 +353,7 @@ def get_common_parameters(methods: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 
 def endpoints_to_dict(endpoints: Generator[Endpoint, None, None]) -> Dict[str, CaseInsensitiveDict]:
-    output: Dict[str, CaseInsensitiveDict] = {}
+    output = {}
     for endpoint in endpoints:
         output.setdefault(endpoint.path, CaseInsensitiveDict())
         output[endpoint.path][endpoint.method] = endpoint

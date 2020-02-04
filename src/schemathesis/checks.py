@@ -18,7 +18,7 @@ def not_a_server_error(response: GenericResponse, case: "Case") -> None:
     """A check to verify that the response is not a server-side error."""
     if response.status_code >= 500:
         exc_class = get_status_code_error(response.status_code)
-        raise exc_class(f"Received a response with 5xx status code: {response.status_code}")
+        raise exc_class("Received a response with 5xx status code: {status_code}".format(status_code=response.status_code))
 
 
 def status_code_conformance(response: GenericResponse, case: "Case") -> None:
@@ -30,9 +30,9 @@ def status_code_conformance(response: GenericResponse, case: "Case") -> None:
     if response.status_code not in allowed_response_statuses:
         responses_list = ", ".join(map(str, responses))
         message = (
-            f"Received a response with a status code, which is not defined in the schema: "
-            f"{response.status_code}\n\nDeclared status codes: {responses_list}"
-        )
+            "Received a response with a status code, which is not defined in the schema: "
+            "{status_code}\n\nDeclared status codes: {responses_list}"
+        ).format(status_code=response.status_code, responses_list=responses_list)
         exc_class = get_status_code_error(response.status_code)
         raise exc_class(message)
 
@@ -58,12 +58,12 @@ def content_type_conformance(response: GenericResponse, case: "Case") -> None:
             return
         expected_main, expected_sub = parse_content_type(option)
         received_main, received_sub = parse_content_type(content_type)
-    exc_class = get_response_type_error(f"{expected_main}_{expected_sub}", f"{received_main}_{received_sub}")
+    exc_class = get_response_type_error("{expected_main}_{expected_sub}".format(expected_main=expected_main, expected_sub=expected_sub), "{received_main}_{received_sub}".format(received_main=received_main, received_sub=received_sub))
     raise exc_class(
-        f"Received a response with '{content_type}' Content-Type, "
-        f"but it is not declared in the schema.\n\n"
-        f"Defined content types: {', '.join(produces)}"
-    )
+        "Received a response with '{content_type}' Content-Type, "
+        "but it is not declared in the schema.\n\n"
+        "Defined content types: {produces}"
+    ).format(content_type=content_type, produces=', '.join(produces))
 
 
 def response_schema_conformance(response: GenericResponse, case: "Case") -> None:
@@ -95,11 +95,9 @@ def response_schema_conformance(response: GenericResponse, case: "Case") -> None
         jsonschema.validate(data, schema)
     except jsonschema.ValidationError as exc:
         exc_class = get_schema_validation_error(exc)
-        raise exc_class(f"The received response does not conform to the defined schema!\n\nDetails: \n\n{exc}")
+        raise exc_class("The received response does not conform to the defined schema!\n\nDetails: \n\n{exc}".format(exc=exc))
 
 
 DEFAULT_CHECKS = (not_a_server_error,)
 OPTIONAL_CHECKS = (status_code_conformance, content_type_conformance, response_schema_conformance)
-ALL_CHECKS: Tuple[
-    Callable[[Union[requests.Response, WSGIResponse], "Case"], None], ...
-] = DEFAULT_CHECKS + OPTIONAL_CHECKS
+ALL_CHECKS = DEFAULT_CHECKS + OPTIONAL_CHECKS

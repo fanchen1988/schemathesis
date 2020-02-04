@@ -145,7 +145,7 @@ def get_case_strategy(endpoint: Endpoint) -> st.SearchStrategy:
     Path & endpoint are static, the others are JSON schemas.
     """
     strategies = {}
-    static_kwargs: Dict[str, Any] = {"endpoint": endpoint}
+    static_kwargs = {"endpoint": endpoint}
     try:
         for parameter in PARAMETERS:
             value = getattr(endpoint, parameter)
@@ -183,7 +183,7 @@ def quote_all(parameters: Dict[str, Any]) -> Dict[str, Any]:
 def _get_case_strategy(
     endpoint: Endpoint, extra_static_parameters: Dict[str, Any], strategies: Dict[str, st.SearchStrategy]
 ) -> st.SearchStrategy:
-    static_parameters: Dict[str, Any] = {"endpoint": endpoint, **extra_static_parameters}
+    static_parameters = {"endpoint": endpoint, **extra_static_parameters}
     if endpoint.method == "GET":
         if endpoint.body is not None:
             raise InvalidSchema("Body parameters are defined for GET request.")
@@ -203,9 +203,9 @@ def _apply_hooks(strategies: Dict[str, st.SearchStrategy], getter: Callable[[str
 
 def register_string_format(name: str, strategy: st.SearchStrategy) -> None:
     if not isinstance(name, str):
-        raise TypeError(f"name must be of type {str}, not {type(name)}")
+        raise TypeError("name must be of type {str}, not {type_name}".format(str=str, type_name=type(name)))
     if not isinstance(strategy, st.SearchStrategy):
-        raise TypeError(f"strategy must be of type {st.SearchStrategy}, not {type(strategy)}")
+        raise TypeError("strategy must be of type {ss}, not {st_type}".format(ss=st.SearchStrategy, st_type=type(strategy)))
     from hypothesis_jsonschema._from_schema import STRING_FORMATS  # pylint: disable=import-outside-toplevel
 
     STRING_FORMATS[name] = strategy

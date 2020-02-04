@@ -44,7 +44,7 @@ def validate_app(ctx: click.core.Context, param: click.core.Parameter, raw_value
         raise click.BadParameter("Can not import application from the given module")
     except Exception as exc:
         message = utils.format_exception(exc)
-        click.secho(f"Error: {message}", fg="red")
+        click.secho("Error: {message}".format(message=message), fg="red")
         raise click.Abort
     # accessing the module from sys.modules returns a proper module, while `__import__`
     # may return a parent module (system dependent)
@@ -93,4 +93,4 @@ def reraise_format_error(raw_value: str) -> Generator[None, None, None]:
     try:
         yield
     except ValueError:
-        raise click.BadParameter(f"Should be in KEY:VALUE format. Got: {raw_value}")
+        raise click.BadParameter("Should be in KEY:VALUE format. Got: {raw_value}".format(raw_value=raw_value))
