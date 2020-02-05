@@ -264,9 +264,8 @@ def handle_initialized(context, event):
         "Python {py_version}, "
         "schemathesis-{version}, "
         "hypothesis-{hy_version}, "
-        "hypothesis_jsonschema-{hyjs_version}, "
         "jsonschema-{js_version}"
-    ).format(system=platform.system(), py_version=platform.python_version(), version=__version__, hy_version=metadata.version('hypothesis'), hyjs_version=metadata.version('hypothesis_jsonschema'), js_version=metadata.version('jsonschema'))
+    ).format(system=platform.system(), py_version=platform.python_version(), version=__version__, hy_version=metadata.version('hypothesis'), js_version=metadata.version('jsonschema'))
     click.echo(versions)
     click.echo("rootdir: {cwd}".format(cwd=os.getcwdu()))
     click.echo(

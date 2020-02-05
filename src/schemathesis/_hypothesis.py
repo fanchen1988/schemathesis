@@ -14,7 +14,7 @@ from urllib.parse import quote_plus
 
 import hypothesis
 import hypothesis.strategies as st
-from hypothesis_jsonschema import from_schema
+from .hypothesis_jsonschema import from_schema
 from requests.exceptions import InvalidHeader  # type: ignore
 from requests.utils import check_header_validity  # type: ignore
 
@@ -212,7 +212,7 @@ def register_string_format(name, strategy):
         raise TypeError("name must be of type {str}, not {type_name}".format(str=str, type_name=type(name)))
     if not isinstance(strategy, st.SearchStrategy):
         raise TypeError("strategy must be of type {ss}, not {st_type}".format(ss=st.SearchStrategy, st_type=type(strategy)))
-    from hypothesis_jsonschema._from_schema import STRING_FORMATS  # pylint: disable=import-outside-toplevel
+    from .hypothesis_jsonschema._from_schema import STRING_FORMATS  # pylint: disable=import-outside-toplevel
 
     STRING_FORMATS[name] = strategy
 
