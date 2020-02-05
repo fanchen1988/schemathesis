@@ -2,11 +2,10 @@
 name = "schemathesis"
 version = "0.23.7"
 description = "Hypothesis strategies for Open API / Swagger schemas"
-keywords = ["pytest", "hypothesis", "openapi", "swagger", "testing"]
+keywords = ["hypothesis", "openapi", "swagger", "testing"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
-    "Framework :: Pytest",
     "Framework :: Hypothesis",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
@@ -24,14 +23,11 @@ repository = "https://github.com/kiwicom/schemathesis"
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^2.7 || ^3.6"
 attrs = "^19.1"
 hypothesis = ">=4.32,<6.0"
-hypothesis_jsonschema = ">=0.9.13,<1.0"
 jsonschema = "^3.0.0"
-pytest = ">4.6.4"
 pyyaml = "^5.1"
-pytest-subtests = "^0.2.1"
 requests = "^2.22"
 click = "^7.0"
 importlib_metadata = { version = "^1.1", python = "<3.8" }
@@ -39,16 +35,8 @@ werkzeug = "^0.16.0"
 
 [tool.poetry.dev-dependencies]
 coverage = "^4.5"
-pytest = ">4.6.4"
-aiohttp = "^3.6"
-pytest-mock = "^1.11.0"
-pytest-asyncio = "^0.10.0"
-pytest-xdist = "^1.30"
 typing_extensions = "^3.7"
 flask = "^1.1"
-
-[tool.poetry.plugins]
-pytest11 = {schemathesis = "schemathesis.extra.pytest_plugin"}
 
 [tool.poetry.scripts]
 schemathesis = "schemathesis.cli:schemathesis"
@@ -64,7 +52,7 @@ multi_line_output = 3
 default_section = "THIRDPARTY"
 include_trailing_comma = true
 known_first_party = "schemathesis"
-known_third_party = ["_pytest", "aiohttp", "attr", "click", "flask", "hypothesis", "hypothesis_jsonschema", "jsonschema", "pytest", "pytest_subtests", "requests", "schemathesis", "werkzeug", "yaml"]
+known_third_party = ["attr", "click", "flask", "hypothesis", "jsonschema", "requests", "schemathesis", "werkzeug", "yaml"]
 
 [build-system]
 requires = ["poetry>=0.12"]
