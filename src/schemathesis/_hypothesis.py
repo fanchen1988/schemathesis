@@ -1,4 +1,10 @@
 """Provide strategies for given endpoint(s) definition."""
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
 import asyncio
 import re
 from base64 import b64encode
@@ -22,8 +28,8 @@ PARAMETERS = frozenset(("path_parameters", "headers", "cookies", "query", "body"
 
 
 def create_test(
-    endpoint: Endpoint, test: Callable, settings: Optional[hypothesis.settings] = None, seed: Optional[int] = None
-) -> Callable:
+    endpoint, test, settings = None, seed = None
+):
     """Create a Hypothesis test."""
     strategy = endpoint.as_strategy()
     wrapped_test = hypothesis.given(case=strategy)(test)
@@ -38,15 +44,15 @@ def create_test(
 
 
 def make_test_or_exception(
-    endpoint: Endpoint, func: Callable, settings: Optional[hypothesis.settings] = None, seed: Optional[int] = None
-) -> Union[Callable, InvalidSchema]:
+    endpoint, func, settings = None, seed = None
+):
     try:
         return create_test(endpoint, func, settings, seed=seed)
     except InvalidSchema as exc:
         return exc
 
 
-def get_original_test(test: Callable) -> Callable:
+def get_original_test(test):
     """Get the original test function even if it is wrapped by `hypothesis.settings` decorator.
 
     Applies only to Hypothesis pre 4.42.4 versions.
@@ -59,8 +65,8 @@ def get_original_test(test: Callable) -> Callable:
     return test
 
 
-def make_async_test(test: Callable) -> Callable:
-    def async_run(*args: Any, **kwargs: Any) -> None:
+def make_async_test(test):
+    def async_run(*args, **kwargs):
         loop = asyncio.get_event_loop()
         coro = test(*args, **kwargs)
         future = asyncio.ensure_future(coro, loop=loop)
@@ -69,7 +75,7 @@ def make_async_test(test: Callable) -> Callable:
     return async_run
 
 
-def get_examples(endpoint: Endpoint) -> Generator[Case, None, None]:
+def get_examples(endpoint):
     for name in PARAMETERS:
         parameter = getattr(endpoint, name)
         if parameter is not None and "example" in parameter:
@@ -83,7 +89,7 @@ def get_examples(endpoint: Endpoint) -> Generator[Case, None, None]:
                 yield _get_case_strategy(endpoint, static_parameters, strategies).example()
 
 
-def add_examples(test: Callable, endpoint: Endpoint) -> Callable:
+def add_examples(test, endpoint):
     """Add examples to the Hypothesis test, if they are specified in the schema."""
     for case in get_examples(endpoint):
         test = hypothesis.example(case)(test)
@@ -94,7 +100,7 @@ def add_examples(test: Callable, endpoint: Endpoint) -> Callable:
 INVALID_HEADER_RE = re.compile(r"\n(?![ \t])|\r(?![ \t\n])")  # pragma: no mutate
 
 
-def _is_latin_1_encodable(value: str) -> bool:
+def _is_latin_1_encodable(value):
     """Header values are encoded to latin-1 before sending.
 
     We need to generate valid payload.
@@ -106,7 +112,7 @@ def _is_latin_1_encodable(value: str) -> bool:
         return False
 
 
-def _has_invalid_characters(name: str, value: str) -> bool:
+def _has_invalid_characters(name, value):
     try:
         check_header_validity((name, value))
         return bool(INVALID_HEADER_RE.search(value))
@@ -114,7 +120,7 @@ def _has_invalid_characters(name: str, value: str) -> bool:
         return True
 
 
-def is_valid_header(headers: Dict[str, str]) -> bool:
+def is_valid_header(headers):
     """Verify if the generated headers are valid."""
     for name, value in headers.items():
         if not _is_latin_1_encodable(value):
@@ -124,11 +130,11 @@ def is_valid_header(headers: Dict[str, str]) -> bool:
     return True
 
 
-def is_surrogate(item: Any) -> bool:
+def is_surrogate(item):
     return isinstance(item, str) and bool(re.search(r"[\ud800-\udfff]", item))
 
 
-def is_valid_query(query: Dict[str, Any]) -> bool:
+def is_valid_query(query):
     """Surrogates are not allowed in a query string.
 
     `requests` and `werkzeug` will fail to send it to the application.
@@ -139,7 +145,7 @@ def is_valid_query(query: Dict[str, Any]) -> bool:
     return True
 
 
-def get_case_strategy(endpoint: Endpoint) -> st.SearchStrategy:
+def get_case_strategy(endpoint):
     """Create a strategy for a complete test case.
 
     Path & endpoint are static, the others are JSON schemas.
@@ -167,7 +173,7 @@ def get_case_strategy(endpoint: Endpoint) -> st.SearchStrategy:
         raise InvalidSchema("Invalid schema for this endpoint")
 
 
-def filter_path_parameters(parameters: Dict[str, Any]) -> bool:
+def filter_path_parameters(parameters):
     """Single "." chars are excluded from path by urllib3.
 
     In this case one variable in the path template will be empty, which will lead to 404 in most of the cases.
@@ -176,13 +182,13 @@ def filter_path_parameters(parameters: Dict[str, Any]) -> bool:
     return not any(value == "." for value in parameters.values())
 
 
-def quote_all(parameters: Dict[str, Any]) -> Dict[str, Any]:
+def quote_all(parameters):
     return {key: quote_plus(value) if isinstance(value, str) else value for key, value in parameters.items()}
 
 
 def _get_case_strategy(
-    endpoint: Endpoint, extra_static_parameters: Dict[str, Any], strategies: Dict[str, st.SearchStrategy]
-) -> st.SearchStrategy:
+    endpoint, extra_static_parameters, strategies
+):
     static_parameters = {"endpoint": endpoint, **extra_static_parameters}
     if endpoint.method == "GET":
         if endpoint.body is not None:
@@ -194,14 +200,14 @@ def _get_case_strategy(
     return st.builds(partial(Case, **static_parameters), **strategies)
 
 
-def _apply_hooks(strategies: Dict[str, st.SearchStrategy], getter: Callable[[str], Optional[Hook]]) -> None:
+def _apply_hooks(strategies, getter):
     for key, strategy in strategies.items():
         hook = getter(key)
         if hook is not None:
             strategies[key] = hook(strategy)
 
 
-def register_string_format(name: str, strategy: st.SearchStrategy) -> None:
+def register_string_format(name, strategy):
     if not isinstance(name, str):
         raise TypeError("name must be of type {str}, not {type_name}".format(str=str, type_name=type(name)))
     if not isinstance(strategy, st.SearchStrategy):
@@ -211,6 +217,6 @@ def register_string_format(name: str, strategy: st.SearchStrategy) -> None:
     STRING_FORMATS[name] = strategy
 
 
-def init_default_strategies() -> None:
+def init_default_strategies():
     register_string_format("binary", st.binary())
     register_string_format("byte", st.binary().map(lambda x: b64encode(x).decode()))

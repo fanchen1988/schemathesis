@@ -1,3 +1,10 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 from inspect import signature
 from typing import Any, Callable, Dict, Optional, Union
 
@@ -14,15 +21,15 @@ from .utils import NOT_SET
 
 
 @attr.s(slots=True)  # pragma: no mutate
-class LazySchema:
+class LazySchema(object):
     fixture_name = attr.ib(type=str)  # pragma: no mutate
     method = attr.ib(default=NOT_SET, type=Optional[Filter])  # pragma: no mutate
     endpoint = attr.ib(default=NOT_SET, type=Optional[Filter])  # pragma: no mutate
     tag = attr.ib(default=NOT_SET, type=Optional[Filter])  # pragma: no mutate
 
     def parametrize(
-        self, method: Optional[Filter] = NOT_SET, endpoint: Optional[Filter] = NOT_SET, tag: Optional[Filter] = NOT_SET
-    ) -> Callable:
+        self, method = NOT_SET, endpoint = NOT_SET, tag = NOT_SET
+    ):
         if method is NOT_SET:
             method = self.method
         if endpoint is NOT_SET:
@@ -30,8 +37,8 @@ class LazySchema:
         if tag is NOT_SET:
             tag = self.tag
 
-        def wrapper(func: Callable) -> Callable:
-            def test(request: FixtureRequest, subtests: SubTests) -> None:
+        def wrapper(func):
+            def test(request, subtests):
                 """The actual test, which is executed by pytest."""
                 schema = get_schema(request, self.fixture_name, method, endpoint, tag)
                 fixtures = get_fixtures(func, request)
@@ -52,36 +59,36 @@ class LazySchema:
         return wrapper
 
 
-def get_test(test: Union[Callable, InvalidSchema]) -> Callable:
+def get_test(test):
     """For invalid schema exceptions construct a failing test function, return the original test otherwise."""
     if isinstance(test, InvalidSchema):
         message = test.args[0]
 
-        def actual_test(*args: Any, **kwargs: Any) -> None:
+        def actual_test(*args, **kwargs):
             pytest.fail(message)
 
         return actual_test
     return test
 
 
-def _get_node_name(node_id: str, endpoint: Endpoint) -> str:
+def _get_node_name(node_id, endpoint):
     """Make a test node name. For example: test_api[GET:/v1/users]."""
     return "{node_id}[{method}:{path}]".format(node_id=node_id, method=endpoint.method, path=endpoint.path)
 
 
-def run_subtest(endpoint: Endpoint, fixtures: Dict[str, Any], sub_test: Callable, subtests: SubTests) -> None:
+def run_subtest(endpoint, fixtures, sub_test, subtests):
     """Run the given subtest with pytest fixtures."""
     with subtests.test(method=endpoint.method, path=endpoint.path):
         sub_test(**fixtures)
 
 
 def get_schema(
-    request: FixtureRequest,
-    name: str,
-    method: Optional[Filter] = None,
-    endpoint: Optional[Filter] = None,
-    tag: Optional[Filter] = None,
-) -> BaseSchema:
+    request,
+    name,
+    method = None,
+    endpoint = None,
+    tag = None,
+):
     """Loads a schema from the fixture."""
     schema = request.getfixturevalue(name)
     if not isinstance(schema, BaseSchema):
@@ -95,7 +102,7 @@ def get_schema(
     return schema.__class__(schema.raw_schema, method=method, endpoint=endpoint, tag=tag)
 
 
-def get_fixtures(func: Callable, request: FixtureRequest) -> Dict[str, Any]:
+def get_fixtures(func, request):
     """Load fixtures, needed for the test function."""
     sig = signature(func)
     return {name: request.getfixturevalue(name) for name in sig.parameters if name != "case"}

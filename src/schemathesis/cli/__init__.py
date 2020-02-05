@@ -1,3 +1,9 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
 import pathlib
 import traceback
 from contextlib import contextmanager
@@ -29,7 +35,7 @@ DEFAULT_WORKERS = 1
 MAX_WORKERS = 64
 
 
-def register_check(function: Callable[[Union[requests.Response, WSGIResponse], models.Case], None]) -> None:
+def register_check(function):
     """Register a new check for schemathesis CLI."""
     checks_module.ALL_CHECKS += (function,)
     CHECKS_TYPE.choices += (function.__name__,)  # type: ignore
@@ -38,7 +44,7 @@ def register_check(function: Callable[[Union[requests.Response, WSGIResponse], m
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.option("--pre-run", help="A module to execute before the running the tests.", type=str)
 @click.version_option()
-def schemathesis(pre_run: Optional[str] = None) -> None:
+def schemathesis(pre_run = None):
     """Command line tool for testing your web application built with Open API / Swagger specifications."""
     if pre_run:
         load_hook(pre_run)
@@ -127,29 +133,29 @@ def schemathesis(pre_run: Optional[str] = None) -> None:
     callback=callbacks.convert_verbosity,
 )
 def run(  # pylint: disable=too-many-arguments
-    schema: str,
-    auth: Optional[Tuple[str, str]],
-    auth_type: str,
-    headers: Dict[str, str],
-    checks: Iterable[str] = DEFAULT_CHECKS_NAMES,
-    exit_first: bool = False,
-    endpoints: Optional[Filter] = None,
-    methods: Optional[Filter] = None,
-    tags: Optional[Filter] = None,
-    workers_num: int = DEFAULT_WORKERS,
-    base_url: Optional[str] = None,
-    app: Any = None,
-    request_timeout: Optional[int] = None,
-    validate_schema: bool = True,
-    hypothesis_deadline: Optional[Union[int, NotSet]] = None,
-    hypothesis_derandomize: Optional[bool] = None,
-    hypothesis_max_examples: Optional[int] = None,
-    hypothesis_phases: Optional[List[hypothesis.Phase]] = None,
-    hypothesis_report_multiple_bugs: Optional[bool] = None,
-    hypothesis_suppress_health_check: Optional[List[hypothesis.HealthCheck]] = None,
-    hypothesis_seed: Optional[int] = None,
-    hypothesis_verbosity: Optional[hypothesis.Verbosity] = None,
-) -> None:
+    schema,
+    auth,
+    auth_type,
+    headers,
+    checks = DEFAULT_CHECKS_NAMES,
+    exit_first = False,
+    endpoints = None,
+    methods = None,
+    tags = None,
+    workers_num = DEFAULT_WORKERS,
+    base_url = None,
+    app = None,
+    request_timeout = None,
+    validate_schema = True,
+    hypothesis_deadline = None,
+    hypothesis_derandomize = None,
+    hypothesis_max_examples = None,
+    hypothesis_phases = None,
+    hypothesis_report_multiple_bugs = None,
+    hypothesis_suppress_health_check = None,
+    hypothesis_seed = None,
+    hypothesis_verbosity = None,
+):
     """Perform schemathesis test against an API specified by SCHEMA.
 
     SCHEMA must be a valid URL or file path pointing to an Open API / Swagger specification.
@@ -201,7 +207,7 @@ def run(  # pylint: disable=too-many-arguments
     execute(prepared_runner, workers_num)
 
 
-def get_output_handler(workers_num: int) -> Callable[[events.ExecutionContext, events.ExecutionEvent], None]:
+def get_output_handler(workers_num):
     if workers_num > 1:
         output_style = OutputStyle.short
     else:
@@ -209,7 +215,7 @@ def get_output_handler(workers_num: int) -> Callable[[events.ExecutionContext, e
     return cast(Callable[[events.ExecutionContext, events.ExecutionEvent], None], output_style)
 
 
-def load_hook(module_name: str) -> None:
+def load_hook(module_name):
     """Load the given hook by importing it."""
     try:
         __import__(module_name)
@@ -221,7 +227,7 @@ def load_hook(module_name: str) -> None:
 
 
 @contextmanager
-def abort_on_network_errors() -> Generator[None, None, None]:
+def abort_on_network_errors():
     """Abort on network errors during the schema loading."""
     try:
         yield
@@ -245,7 +251,7 @@ class OutputStyle(Enum):
     short = output.short.handle_event
 
 
-def execute(prepared_runner: Generator[events.ExecutionEvent, None, None], workers_num: int) -> None:
+def execute(prepared_runner, workers_num):
     """Execute a prepared runner by drawing events from it and passing to a proper handler."""
     handler = get_output_handler(workers_num)
     context = events.ExecutionContext(workers_num=workers_num)

@@ -1,3 +1,12 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import int
+from builtins import map
+from builtins import str
+from future import standard_library
+standard_library.install_aliases()
 import string
 from itertools import product
 from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Tuple, Union
@@ -14,14 +23,14 @@ if TYPE_CHECKING:
 GenericResponse = Union[requests.Response, WSGIResponse]  # pragma: no mutate
 
 
-def not_a_server_error(response: GenericResponse, case: "Case") -> None:
+def not_a_server_error(response, case):
     """A check to verify that the response is not a server-side error."""
     if response.status_code >= 500:
         exc_class = get_status_code_error(response.status_code)
         raise exc_class("Received a response with 5xx status code: {status_code}".format(status_code=response.status_code))
 
 
-def status_code_conformance(response: GenericResponse, case: "Case") -> None:
+def status_code_conformance(response, case):
     responses = case.endpoint.definition.get("responses", {})
     # "default" can be used as the default response object for all HTTP codes that are not covered individually
     if "default" in responses:
@@ -37,14 +46,14 @@ def status_code_conformance(response: GenericResponse, case: "Case") -> None:
         raise exc_class(message)
 
 
-def _expand_responses(responses: Dict[Union[str, int], Any]) -> Generator[int, None, None]:
+def _expand_responses(responses):
     for code in responses:
         chars = [list(string.digits) if digit == "X" else [digit] for digit in str(code).upper()]
         for expanded in product(*chars):
             yield int("".join(expanded))
 
 
-def content_type_conformance(response: GenericResponse, case: "Case") -> None:
+def content_type_conformance(response, case):
     global_produces = case.endpoint.schema.raw_schema.get("produces", None)
     if global_produces:
         produces = global_produces
@@ -66,7 +75,7 @@ def content_type_conformance(response: GenericResponse, case: "Case") -> None:
     ).format(content_type=content_type, produces=', '.join(produces))
 
 
-def response_schema_conformance(response: GenericResponse, case: "Case") -> None:
+def response_schema_conformance(response, case):
     try:
         content_type = response.headers["Content-Type"]
     except KeyError:

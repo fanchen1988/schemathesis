@@ -1,3 +1,9 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
 import pathlib
 import re
 import sys
@@ -11,7 +17,7 @@ import hypothesis
 from .. import utils
 
 
-def validate_schema(ctx: click.core.Context, param: click.core.Parameter, raw_value: str) -> str:
+def validate_schema(ctx, param, raw_value):
     if "app" not in ctx.params and not urlparse(raw_value).netloc:
         if "\x00" in raw_value or not _verify_path(raw_value):
             raise click.UsageError("Invalid SCHEMA, must be a valid URL or file path.")
@@ -20,7 +26,7 @@ def validate_schema(ctx: click.core.Context, param: click.core.Parameter, raw_va
     return raw_value
 
 
-def _verify_path(path: str) -> bool:
+def _verify_path(path):
     try:
         return pathlib.Path(path).is_file()
     except OSError:
@@ -28,13 +34,13 @@ def _verify_path(path: str) -> bool:
         return False
 
 
-def validate_base_url(ctx: click.core.Context, param: click.core.Parameter, raw_value: str) -> str:
+def validate_base_url(ctx, param, raw_value):
     if raw_value and not urlparse(raw_value).netloc:
         raise click.UsageError("Invalid base URL")
     return raw_value
 
 
-def validate_app(ctx: click.core.Context, param: click.core.Parameter, raw_value: Optional[str]) -> Any:
+def validate_app(ctx, param, raw_value):
     if raw_value is None:
         return raw_value
     path, name = (re.split(r":(?![\\/])", raw_value, 1) + [None])[:2]  # type: ignore
@@ -56,8 +62,8 @@ def validate_app(ctx: click.core.Context, param: click.core.Parameter, raw_value
 
 
 def validate_auth(
-    ctx: click.core.Context, param: click.core.Parameter, raw_value: Optional[str]
-) -> Optional[Tuple[str, str]]:
+    ctx, param, raw_value
+):
     if raw_value is not None:
         with reraise_format_error(raw_value):
             user, password = tuple(raw_value.split(":"))
@@ -68,8 +74,8 @@ def validate_auth(
 
 
 def validate_headers(
-    ctx: click.core.Context, param: click.core.Parameter, raw_value: Tuple[str, ...]
-) -> Dict[str, str]:
+    ctx, param, raw_value
+):
     headers = {}
     for header in raw_value:
         with reraise_format_error(header):
@@ -81,15 +87,15 @@ def validate_headers(
 
 
 def convert_verbosity(
-    ctx: click.core.Context, param: click.core.Parameter, value: Optional[str]
-) -> Optional[hypothesis.Verbosity]:
+    ctx, param, value
+):
     if value is None:
         return value
     return hypothesis.Verbosity[value]
 
 
 @contextmanager
-def reraise_format_error(raw_value: str) -> Generator[None, None, None]:
+def reraise_format_error(raw_value):
     try:
         yield
     except ValueError:

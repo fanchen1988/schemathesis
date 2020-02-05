@@ -1,4 +1,12 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
 # pylint: disable=too-many-arguments
+from builtins import open
+from builtins import object
+from future import standard_library
+standard_library.install_aliases()
 import os
 from typing import IO, Any, Callable, Dict, Optional, Union
 from urllib.parse import urljoin
@@ -19,14 +27,15 @@ from .utils import NOT_SET, StringDatesYAMLLoader, WSGIResponse, deprecated, get
 
 
 def from_path(
-    path: PathLike,
-    base_url: Optional[str] = None,
-    method: Optional[Filter] = None,
-    endpoint: Optional[Filter] = None,
-    tag: Optional[Filter] = None,
-    *,
-    app: Any = None,
-    validate_schema: bool = True) -> BaseSchema:
+    path,
+    base_url = None,
+    method = None,
+    endpoint = None,
+    tag = None, **_3to2kwargs):
+    if 'validate_schema' in _3to2kwargs: validate_schema = _3to2kwargs['validate_schema']; del _3to2kwargs['validate_schema']
+    else: validate_schema =  True
+    if 'app' in _3to2kwargs: app = _3to2kwargs['app']; del _3to2kwargs['app']
+    else: app =  None
     """Load a file from OS path and parse to schema instance."""
     with open(path) as fd:
         return from_file(
@@ -42,16 +51,17 @@ def from_path(
 
 
 def from_uri(
-    uri: str,
-    base_url: Optional[str] = None,
-    method: Optional[Filter] = None,
-    endpoint: Optional[Filter] = None,
-    tag: Optional[Filter] = None,
-    *,
-    app: Any = None,
-    validate_schema: bool = True,
-    **kwargs: Any
-) -> BaseSchema:
+    uri,
+    base_url = None,
+    method = None,
+    endpoint = None,
+    tag = None,
+    **kwargs
+):
+    if 'validate_schema' in kwargs: validate_schema = kwargs['validate_schema']; del kwargs['validate_schema']
+    else: validate_schema =  True
+    if 'app' in kwargs: app = kwargs['app']; del kwargs['app']
+    else: app =  None
     """Load a remote resource and parse to schema instance."""
     kwargs.setdefault("headers", {}).setdefault("User-Agent", USER_AGENT)
     response = requests.get(uri, **kwargs)
@@ -74,15 +84,16 @@ def from_uri(
 
 
 def from_file(
-    file: Union[IO[str], str],
-    location: Optional[str] = None,
-    base_url: Optional[str] = None,
-    method: Optional[Filter] = None,
-    endpoint: Optional[Filter] = None,
-    tag: Optional[Filter] = None,
-    *,
-    app: Any = None,
-    validate_schema: bool = True) -> BaseSchema:
+    file,
+    location = None,
+    base_url = None,
+    method = None,
+    endpoint = None,
+    tag = None, **_3to2kwargs):
+    if 'validate_schema' in _3to2kwargs: validate_schema = _3to2kwargs['validate_schema']; del _3to2kwargs['validate_schema']
+    else: validate_schema =  True
+    if 'app' in _3to2kwargs: app = _3to2kwargs['app']; del _3to2kwargs['app']
+    else: app =  None
     """Load a file content and parse to schema instance.
 
     `file` could be a file descriptor, string or bytes.
@@ -101,15 +112,16 @@ def from_file(
 
 
 def from_dict(
-    raw_schema: Dict[str, Any],
-    location: Optional[str] = None,
-    base_url: Optional[str] = None,
-    method: Optional[Filter] = None,
-    endpoint: Optional[Filter] = None,
-    tag: Optional[Filter] = None,
-    *,
-    app: Any = None,
-    validate_schema: bool = True) -> BaseSchema:
+    raw_schema,
+    location = None,
+    base_url = None,
+    method = None,
+    endpoint = None,
+    tag = None, **_3to2kwargs):
+    if 'validate_schema' in _3to2kwargs: validate_schema = _3to2kwargs['validate_schema']; del _3to2kwargs['validate_schema']
+    else: validate_schema =  True
+    if 'app' in _3to2kwargs: app = _3to2kwargs['app']; del _3to2kwargs['app']
+    else: app =  None
     """Get a proper abstraction for the given raw schema."""
     if "swagger" in raw_schema:
         _maybe_validate_schema(raw_schema, spec_schemas.SWAGGER_20, validate_schema)
@@ -125,7 +137,7 @@ def from_dict(
     raise ValueError("Unsupported schema type")
 
 
-def _maybe_validate_schema(instance: Dict[str, Any], schema: Dict[str, Any], validate_schema: bool) -> None:
+def _maybe_validate_schema(instance, schema, validate_schema):
     if validate_schema:
         try:
             jsonschema.validate(instance, schema)
@@ -134,24 +146,24 @@ def _maybe_validate_schema(instance: Dict[str, Any], schema: Dict[str, Any], val
 
 
 def from_pytest_fixture(
-    fixture_name: str,
-    method: Optional[Filter] = NOT_SET,
-    endpoint: Optional[Filter] = NOT_SET,
-    tag: Optional[Filter] = NOT_SET,
-) -> LazySchema:
+    fixture_name,
+    method = NOT_SET,
+    endpoint = NOT_SET,
+    tag = NOT_SET,
+):
     """Needed for a consistent library API."""
     return LazySchema(fixture_name, method=method, endpoint=endpoint, tag=tag)
 
 
 def from_wsgi(
-    schema_path: str,
-    app: Any,
-    base_url: Optional[str] = None,
-    method: Optional[Filter] = None,
-    endpoint: Optional[Filter] = None,
-    tag: Optional[Filter] = None,
-    validate_schema: bool = True,
-) -> BaseSchema:
+    schema_path,
+    app,
+    base_url = None,
+    method = None,
+    endpoint = None,
+    tag = None,
+    validate_schema = True,
+):
     client = Client(app, WSGIResponse)
     response = client.get(schema_path, headers={"User-Agent": USER_AGENT})
     # Raising exception to provide unified behavior
@@ -170,21 +182,21 @@ def from_wsgi(
     )
 
 
-def get_loader_for_app(app: Any) -> Callable:
+def get_loader_for_app(app):
     if app.__class__.__module__.startswith("aiohttp."):
         return from_aiohttp
     return from_wsgi
 
 
 def from_aiohttp(
-    schema_path: str,
-    app: Any,
-    base_url: Optional[str] = None,
-    method: Optional[Filter] = None,
-    endpoint: Optional[Filter] = None,
-    tag: Optional[Filter] = None,
-    *,
-    validate_schema: bool = True) -> BaseSchema:
+    schema_path,
+    app,
+    base_url = None,
+    method = None,
+    endpoint = None,
+    tag = None, **_3to2kwargs):
+    if 'validate_schema' in _3to2kwargs: validate_schema = _3to2kwargs['validate_schema']; del _3to2kwargs['validate_schema']
+    else: validate_schema =  True
     from .extra._aiohttp import run_server  # pylint: disable=import-outside-toplevel
 
     port = run_server(app)
@@ -196,6 +208,6 @@ def from_aiohttp(
 
 
 # Backward compatibility
-class Parametrizer:
+class Parametrizer(object):
     from_path = deprecated(from_path, "`Parametrizer.from_path` is deprecated, use `schemathesis.from_path` instead.")
     from_uri = deprecated(from_uri, "`Parametrizer.from_uri` is deprecated, use `schemathesis.from_uri` instead.")

@@ -1,5 +1,11 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
 # pylint: disable=too-many-lines
 # These schemas are copied from https://github.com/OAI/OpenAPI-Specification/tree/master/schemas
+from future import standard_library
+standard_library.install_aliases()
 SWAGGER_20 = {
     "title": "A JSON Schema for Swagger 2.0 API.",
     "id": "http://swagger.io/v2/schema.json#",

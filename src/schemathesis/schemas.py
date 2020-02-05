@@ -7,6 +7,15 @@ Their responsibilities:
 
 They give only static definitions of endpoints.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import open
+from builtins import next
+from builtins import super
+from future import standard_library
+standard_library.install_aliases()
 import itertools
 from collections.abc import Mapping
 from copy import deepcopy
@@ -31,7 +40,7 @@ from .utils import NOT_SET, StringDatesYAMLLoader
 
 
 @lru_cache()
-def load_file(location: str) -> Dict[str, Any]:
+def load_file(location):
     """Load a schema from the given file."""
     with open(location) as fd:
         return yaml.load(fd, StringDatesYAMLLoader)
@@ -48,25 +57,25 @@ class BaseSchema(Mapping):
     app = attr.ib(default=None, type=Any)  # pragma: no mutate
     hooks = attr.ib(factory=dict, type=Dict[HookLocation, Hook])  # pragma: no mutate
 
-    def __iter__(self) -> Iterator[str]:
+    def __iter__(self):
         return iter(self.endpoints)
 
-    def __getitem__(self, item: str) -> CaseInsensitiveDict:
+    def __getitem__(self, item):
         return self.endpoints[item]
 
-    def __len__(self) -> int:
+    def __len__(self):
         return len(self.endpoints)
 
     @property  # pragma: no mutate
-    def spec_version(self) -> str:
+    def spec_version(self):
         raise NotImplementedError
 
     @property  # pragma: no mutate
-    def verbose_name(self) -> str:
+    def verbose_name(self):
         raise NotImplementedError
 
     @property
-    def endpoints(self) -> Dict[str, CaseInsensitiveDict]:
+    def endpoints(self):
         if not hasattr(self, "_endpoints"):
             # pylint: disable=attribute-defined-outside-init
             endpoints = self.get_all_endpoints()
@@ -74,30 +83,30 @@ class BaseSchema(Mapping):
         return self._endpoints
 
     @property
-    def resolver(self) -> jsonschema.RefResolver:
+    def resolver(self):
         if not hasattr(self, "_resolver"):
             # pylint: disable=attribute-defined-outside-init
             self._resolver = jsonschema.RefResolver(self.location or "", self.raw_schema, handlers={"": load_file})
         return self._resolver
 
     @property
-    def endpoints_count(self) -> int:
+    def endpoints_count(self):
         return len(list(self.get_all_endpoints()))
 
-    def get_all_endpoints(self) -> Generator[Endpoint, None, None]:
+    def get_all_endpoints(self):
         raise NotImplementedError
 
     def get_all_tests(
-        self, func: Callable, settings: Optional[hypothesis.settings] = None, seed: Optional[int] = None
-    ) -> Generator[Tuple[Endpoint, Union[Callable, InvalidSchema]], None, None]:
+        self, func, settings = None, seed = None
+    ):
         """Generate all endpoints and Hypothesis tests for them."""
         for endpoint in self.get_all_endpoints():
             test = make_test_or_exception(endpoint, func, settings, seed)
             yield endpoint, test
 
     def parametrize(
-        self, method: Optional[Filter] = NOT_SET, endpoint: Optional[Filter] = NOT_SET, tag: Optional[Filter] = NOT_SET
-    ) -> Callable:
+        self, method = NOT_SET, endpoint = NOT_SET, tag = NOT_SET
+    ):
         """Mark a test function as a parametrized one."""
         if method is NOT_SET:
             method = self.method
@@ -106,7 +115,7 @@ class BaseSchema(Mapping):
         if tag is NOT_SET:
             tag = self.tag
 
-        def wrapper(func: Callable) -> Callable:
+        def wrapper(func):
             func._schemathesis_test = self.__class__(  # type: ignore
                 self.raw_schema, base_url=self.base_url, method=method, endpoint=endpoint, tag=tag
             )
@@ -114,15 +123,15 @@ class BaseSchema(Mapping):
 
         return wrapper
 
-    def _get_response_schema(self, definition: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _get_response_schema(self, definition):
         """Extract response schema from `responses`."""
         raise NotImplementedError
 
-    def register_hook(self, place: str, hook: Hook) -> None:
+    def register_hook(self, place, hook):
         key = HookLocation[place]
         self.hooks[key] = hook
 
-    def get_hook(self, place: str) -> Optional[Hook]:
+    def get_hook(self, place):
         key = HookLocation[place]
         return self.hooks.get(key)
 
@@ -130,31 +139,31 @@ class BaseSchema(Mapping):
 class SwaggerV20(BaseSchema):
     nullable_name = "x-nullable"
 
-    def __repr__(self) -> str:
+    def __repr__(self):
         info = self.raw_schema["info"]
         return "{cls_name} for {title} ({version})".format(cls_name=self.__class__.__name__, title=info['title'], version=info['version'])
 
     @property
-    def spec_version(self) -> str:
+    def spec_version(self):
         return self.raw_schema["swagger"]
 
     @property
-    def verbose_name(self) -> str:
+    def verbose_name(self):
         return "Swagger {spec_version}".format(spec_version=self.spec_version)
 
     @property
-    def base_path(self) -> str:
+    def base_path(self):
         """Base path for the schema."""
         path = self.raw_schema.get("basePath", "/")  # pragma: no mutate
         if not path.endswith("/"):
             path += "/"
         return path
 
-    def get_full_path(self, path: str) -> str:
+    def get_full_path(self, path):
         """Compute full path for the given path."""
         return urljoin(self.base_path, path.lstrip("/"))  # pragma: no mutate
 
-    def get_all_endpoints(self) -> Generator[Endpoint, None, None]:
+    def get_all_endpoints(self):
         try:
             paths = self.raw_schema["paths"]  # pylint: disable=unsubscriptable-object
             for path, methods in paths.items():
@@ -176,8 +185,8 @@ class SwaggerV20(BaseSchema):
             raise InvalidSchema("Schema parsing failed. Please check your schema.")
 
     def make_endpoint(
-        self, full_path: str, method: str, parameters: Iterator[Dict[str, Any]], definition: Dict[str, Any]
-    ) -> Endpoint:
+        self, full_path, method, parameters, definition
+    ):
         """Create JSON schemas for query, body, etc from Swagger parameters definitions."""
         base_url = self.base_url
         if base_url is not None:
@@ -189,13 +198,13 @@ class SwaggerV20(BaseSchema):
             self.process_parameter(endpoint, parameter)
         return endpoint
 
-    def process_parameter(self, endpoint: Endpoint, parameter: Dict[str, Any]) -> None:
+    def process_parameter(self, endpoint, parameter):
         """Convert each Parameter object to a JSON schema."""
         parameter = deepcopy(parameter)
         parameter = self.resolve(parameter)
         self.process_by_type(endpoint, parameter)
 
-    def process_by_type(self, endpoint: Endpoint, parameter: Dict[str, Any]) -> None:
+    def process_by_type(self, endpoint, parameter):
         if parameter["in"] == "path":
             self.process_path(endpoint, parameter)
         elif parameter["in"] == "query":
@@ -208,23 +217,23 @@ class SwaggerV20(BaseSchema):
         elif parameter["in"] == "formData":
             self.process_form_data(endpoint, parameter)
 
-    def process_path(self, endpoint: Endpoint, parameter: Dict[str, Any]) -> None:
+    def process_path(self, endpoint, parameter):
         endpoint.path_parameters = self.add_parameter(endpoint.path_parameters, parameter)
 
-    def process_header(self, endpoint: Endpoint, parameter: Dict[str, Any]) -> None:
+    def process_header(self, endpoint, parameter):
         endpoint.headers = self.add_parameter(endpoint.headers, parameter)
 
-    def process_query(self, endpoint: Endpoint, parameter: Dict[str, Any]) -> None:
+    def process_query(self, endpoint, parameter):
         endpoint.query = self.add_parameter(endpoint.query, parameter)
 
-    def process_body(self, endpoint: Endpoint, parameter: Dict[str, Any]) -> None:
+    def process_body(self, endpoint, parameter):
         # "schema" is a required field
         endpoint.body = parameter["schema"]
 
-    def process_form_data(self, endpoint: Endpoint, parameter: Dict[str, Any]) -> None:
+    def process_form_data(self, endpoint, parameter):
         endpoint.form_data = self.add_parameter(endpoint.form_data, parameter)
 
-    def add_parameter(self, container: Optional[Dict[str, Any]], parameter: Dict[str, Any]) -> Dict[str, Any]:
+    def add_parameter(self, container, parameter):
         """Add parameter object to the container."""
         name = parameter["name"]
         container = container or empty_object()
@@ -233,7 +242,7 @@ class SwaggerV20(BaseSchema):
             container["required"].append(name)
         return container
 
-    def parameter_to_json_schema(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def parameter_to_json_schema(self, data):
         """Convert Parameter object to a JSON schema."""
         return {
             key: value
@@ -243,15 +252,15 @@ class SwaggerV20(BaseSchema):
         }
 
     @overload  # pragma: no mutate
-    def resolve(self, item: Dict[str, Any]) -> Dict[str, Any]:  # pylint: disable=function-redefined
+    def resolve(self, item):  # pylint: disable=function-redefined
         pass
 
     @overload  # pragma: no mutate
-    def resolve(self, item: List) -> List:  # pylint: disable=function-redefined
+    def resolve(self, item):  # pylint: disable=function-redefined
         pass
 
     # pylint: disable=function-redefined
-    def resolve(self, item: Union[Dict[str, Any], List]) -> Union[Dict[str, Any], List]:
+    def resolve(self, item):
         """Recursively resolve all references in the given object."""
         if isinstance(item, dict):
             item = self.prepare(item)
@@ -265,11 +274,11 @@ class SwaggerV20(BaseSchema):
                 item[idx] = self.resolve(sub_item)
         return item
 
-    def prepare(self, item: Dict[str, Any]) -> Dict[str, Any]:
+    def prepare(self, item):
         """Parse schema extension, e.g. "x-nullable" field."""
         return to_json_schema(item, self.nullable_name)
 
-    def _get_response_schema(self, definition: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _get_response_schema(self, definition):
         return definition.get("schema")
 
 
@@ -277,15 +286,15 @@ class OpenApi30(SwaggerV20):  # pylint: disable=too-many-ancestors
     nullable_name = "nullable"
 
     @property
-    def spec_version(self) -> str:
+    def spec_version(self):
         return self.raw_schema["openapi"]
 
     @property
-    def verbose_name(self) -> str:
+    def verbose_name(self):
         return "Open API {spec_version}".format(spec_version=self.spec_version)
 
     @property
-    def base_path(self) -> str:
+    def base_path(self):
         """Base path for the schema."""
         servers = self.raw_schema.get("servers", [])
         if servers:
@@ -300,40 +309,40 @@ class OpenApi30(SwaggerV20):  # pylint: disable=too-many-ancestors
         return path
 
     def make_endpoint(
-        self, full_path: str, method: str, parameters: Iterator[Dict[str, Any]], definition: Dict[str, Any]
-    ) -> Endpoint:
+        self, full_path, method, parameters, definition
+    ):
         """Create JSON schemas for query, body, etc from Swagger parameters definitions."""
         endpoint = super().make_endpoint(full_path, method, parameters, definition)
         if "requestBody" in definition:
             self.process_body(endpoint, definition["requestBody"])
         return endpoint
 
-    def process_by_type(self, endpoint: Endpoint, parameter: Dict[str, Any]) -> None:
+    def process_by_type(self, endpoint, parameter):
         if parameter["in"] == "cookie":
             self.process_cookie(endpoint, parameter)
         else:
             super().process_by_type(endpoint, parameter)
 
-    def add_parameter(self, container: Optional[Dict[str, Any]], parameter: Dict[str, Any]) -> Dict[str, Any]:
+    def add_parameter(self, container, parameter):
         container = super().add_parameter(container, parameter)
         if "example" in parameter:
             container["example"] = {parameter["name"]: parameter["example"]}
         return container
 
-    def process_cookie(self, endpoint: Endpoint, parameter: Dict[str, Any]) -> None:
+    def process_cookie(self, endpoint, parameter):
         endpoint.cookies = self.add_parameter(endpoint.cookies, parameter)
 
-    def process_body(self, endpoint: Endpoint, parameter: Dict[str, Any]) -> None:
+    def process_body(self, endpoint, parameter):
         # Take the first media type object
         options = iter(parameter["content"].values())
         parameter = next(options)
         super().process_body(endpoint, parameter)
 
-    def parameter_to_json_schema(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def parameter_to_json_schema(self, data):
         # "schema" field is required for all parameters in Open API 3.0
         return super().parameter_to_json_schema(data["schema"])
 
-    def _get_response_schema(self, definition: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _get_response_schema(self, definition):
         options = iter(definition.get("content", {}).values())
         option = next(options, None)
         if option:
@@ -341,7 +350,7 @@ class OpenApi30(SwaggerV20):  # pylint: disable=too-many-ancestors
         return None
 
 
-def get_common_parameters(methods: Dict[str, Any]) -> List[Dict[str, Any]]:
+def get_common_parameters(methods):
     """Common parameters are deep copied from the methods definitions.
 
     Copying is needed because of further modifications.
@@ -352,7 +361,7 @@ def get_common_parameters(methods: Dict[str, Any]) -> List[Dict[str, Any]]:
     return []
 
 
-def endpoints_to_dict(endpoints: Generator[Endpoint, None, None]) -> Dict[str, CaseInsensitiveDict]:
+def endpoints_to_dict(endpoints):
     output = {}
     for endpoint in endpoints:
         output.setdefault(endpoint.path, CaseInsensitiveDict())

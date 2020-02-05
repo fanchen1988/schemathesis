@@ -1,3 +1,9 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
 import cgi
 import traceback
 import warnings
@@ -16,18 +22,18 @@ from .types import Filter, NotSet
 NOT_SET = NotSet()
 
 
-def deprecated(func: Callable, message: str) -> Callable:
+def deprecated(func, message):
     """Emit a warning if the given function is used."""
 
     @wraps(func)  # pragma: no mutate
-    def inner(*args: Any, **kwargs: Any) -> Any:
+    def inner(*args, **kwargs):
         warnings.warn(message, DeprecationWarning)
         return func(*args, **kwargs)
 
     return inner
 
 
-def is_schemathesis_test(func: Callable) -> bool:
+def is_schemathesis_test(func):
     """Check whether test is parametrized with schemathesis."""
     try:
         return hasattr(func, "_schemathesis_test")
@@ -35,24 +41,24 @@ def is_schemathesis_test(func: Callable) -> bool:
         return False
 
 
-def get_base_url(uri: str) -> str:
+def get_base_url(uri):
     """Remove the path part off the given uri."""
     parts = urlsplit(uri)[:2] + ("", "", "")
     return urlunsplit(parts)
 
 
-def force_tuple(item: Filter) -> Union[List, Set, Tuple]:
+def force_tuple(item):
     if not isinstance(item, (list, set, tuple)):
         return (item,)
     return item
 
 
-def dict_true_values(**kwargs: Any) -> Dict[str, Any]:
+def dict_true_values(**kwargs):
     """Create dict with given kwargs while skipping items where bool(value) evaluates to False."""
     return {key: value for key, value in kwargs.items() if bool(value)}
 
 
-def dict_not_none_values(**kwargs: Any) -> Dict[str, Any]:
+def dict_not_none_values(**kwargs):
     return {key: value for key, value in kwargs.items() if value is not None}
 
 
@@ -66,7 +72,7 @@ IGNORED_PATTERNS = (
 
 
 @contextmanager
-def capture_hypothesis_output() -> Generator[List[str], None, None]:
+def capture_hypothesis_output():
     """Capture all output of Hypothesis into a list of strings.
 
     It allows us to have more granular control over Schemathesis output.
@@ -83,7 +89,7 @@ def capture_hypothesis_output() -> Generator[List[str], None, None]:
     """
     output = []
 
-    def get_output(value: str) -> None:
+    def get_output(value):
         # Drop messages that could be confusing in the Schemathesis context
         if value.startswith(IGNORED_PATTERNS):
             return
@@ -94,23 +100,23 @@ def capture_hypothesis_output() -> Generator[List[str], None, None]:
         yield output
 
 
-def format_exception(error: Exception) -> str:
+def format_exception(error):
     return "".join(traceback.format_exception_only(type(error), error))
 
 
-def parse_content_type(content_type: str) -> Tuple[str, str]:
+def parse_content_type(content_type):
     """Parse Content Type and return main type and subtype."""
     content_type, _ = cgi.parse_header(content_type)
     main_type, sub_type = content_type.split("/", 1)
     return main_type.lower(), sub_type.lower()
 
 
-def are_content_types_equal(source: str, target: str) -> bool:
+def are_content_types_equal(source, target):
     """Check if two content types are the same excluding options."""
     return parse_content_type(source) == parse_content_type(target)
 
 
-def make_loader(*tags_to_remove: str) -> Type[yaml.SafeLoader]:
+def make_loader(*tags_to_remove):
     """Create a YAML loader, that doesn't parse specific tokens into Python objects."""
     cls = type("YAMLLoader", (yaml.SafeLoader,), {})
     cls.yaml_implicit_resolvers = {

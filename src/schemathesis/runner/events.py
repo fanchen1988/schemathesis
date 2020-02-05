@@ -1,3 +1,10 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 import os
 import shutil
 import time
@@ -11,7 +18,7 @@ from ..schemas import BaseSchema
 
 
 @attr.s(slots=True)  # pragma: no mutate
-class ExecutionContext:
+class ExecutionContext(object):
     """Storage for the current context of the execution."""
 
     hypothesis_output = attr.ib(factory=list, type=List[str])  # pragma: no mutate
@@ -22,7 +29,7 @@ class ExecutionContext:
 
 
 @attr.s()  # pragma: no mutate
-class ExecutionEvent:
+class ExecutionEvent(object):
     results = attr.ib(type=TestResultSet)  # pragma: no mutate
     schema = attr.ib(type=BaseSchema)  # pragma: no mutate
 

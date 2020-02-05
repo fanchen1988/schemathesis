@@ -1,3 +1,10 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import super
+from future import standard_library
+standard_library.install_aliases()
 from functools import partial
 from typing import Any, Callable, Generator, List, Optional, Type, cast
 
@@ -15,15 +22,15 @@ from ..utils import is_schemathesis_test
 
 
 class SchemathesisCase(PyCollector):
-    def __init__(self, test_function: Callable, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, test_function, *args, **kwargs):
         self.test_function = test_function
         self.schemathesis_case = test_function._schemathesis_test  # type: ignore
         super().__init__(*args, **kwargs)
 
-    def _get_test_name(self, endpoint: Endpoint) -> str:
+    def _get_test_name(self, endpoint):
         return "{name}[{method}:{path}]".format(name=self.name, method=endpoint.method, path=endpoint.path)
 
-    def _gen_items(self, endpoint: Endpoint) -> Generator[Function, None, None]:
+    def _gen_items(self, endpoint):
         """Generate all items for the given endpoint.
 
         Could produce more than one test item if
@@ -60,13 +67,13 @@ class SchemathesisCase(PyCollector):
                     originalname=name,
                 )
 
-    def _get_class_parent(self) -> Optional[Type]:
+    def _get_class_parent(self):
         clscol = self.getparent(Class)
         return clscol.obj if clscol else None
 
     def _parametrize(
-        self, cls: Optional[Type], definition: FunctionDefinition, fixtureinfo: FuncFixtureInfo
-    ) -> Metafunc:
+        self, cls, definition, fixtureinfo
+    ):
         module = self.getparent(Module).obj
         metafunc = Metafunc(definition, fixtureinfo, self.config, cls=cls, module=module)
         methods = []
@@ -78,13 +85,13 @@ class SchemathesisCase(PyCollector):
         self.ihook.pytest_generate_tests.call_extra(methods, {"metafunc": metafunc})
         return metafunc
 
-    def _make_test(self, endpoint: Endpoint) -> Callable:
+    def _make_test(self, endpoint):
         try:
             return create_test(endpoint, self.test_function)
         except InvalidSchema:
             return lambda: pytest.fail("Invalid schema for endpoint")
 
-    def collect(self) -> List[Function]:  # type: ignore
+    def collect(self):  # type: ignore
         """Generate different test items for all endpoints available in the given schema."""
         try:
             return [
@@ -95,7 +102,7 @@ class SchemathesisCase(PyCollector):
 
 
 class SchemathesisFunction(Function):  # pylint: disable=too-many-ancestors
-    def _getobj(self) -> partial:
+    def _getobj(self):
         """Tests defined as methods require `self` as the first argument.
 
         This method is called only for this case.
@@ -104,7 +111,7 @@ class SchemathesisFunction(Function):  # pylint: disable=too-many-ancestors
 
 
 @hookimpl(hookwrapper=True)  # type:ignore # pragma: no mutate
-def pytest_pycollect_makeitem(collector: nodes.Collector, name: str, obj: Any) -> None:
+def pytest_pycollect_makeitem(collector, name, obj):
     """Switch to a different collector if the test is parametrized marked by schemathesis."""
     outcome = yield
     if is_schemathesis_test(obj):

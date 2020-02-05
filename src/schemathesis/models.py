@@ -1,4 +1,12 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
 # pylint: disable=too-many-instance-attributes
+from builtins import dict
+from builtins import object
+from future import standard_library
+standard_library.install_aliases()
 from collections import Counter
 from contextlib import contextmanager
 from enum import IntEnum
@@ -21,7 +29,7 @@ if TYPE_CHECKING:
 
 
 @attr.s(slots=True)  # pragma: no mutate
-class Case:
+class Case(object):
     """A single test case parameters."""
 
     endpoint = attr.ib(type="Endpoint")  # pragma: no mutate
@@ -33,36 +41,36 @@ class Case:
     form_data = attr.ib(default=None, type=Optional[FormData])  # pragma: no mutate
 
     @property
-    def path(self) -> str:
+    def path(self):
         return self.endpoint.path
 
     @property
-    def method(self) -> str:
+    def method(self):
         return self.endpoint.method
 
     @property
-    def base_url(self) -> Optional[str]:
+    def base_url(self):
         return self.endpoint.base_url
 
     @property
-    def app(self) -> Any:
+    def app(self):
         return self.endpoint.app
 
     @property
-    def formatted_path(self) -> str:
+    def formatted_path(self):
         # pylint: disable=not-a-mapping
         try:
             return self.path.format(**(self.path_parameters or {}))
         except KeyError:
             raise InvalidSchema("Missing required property `required: true`")
 
-    def get_code_to_reproduce(self) -> str:
+    def get_code_to_reproduce(self):
         """Construct a Python code to reproduce this case with `requests`."""
         base_url = self.base_url or "http://localhost"
         kwargs = self.as_requests_kwargs(base_url)
         method = kwargs["method"].lower()
 
-        def are_defaults(key: str, value: Optional[Dict]) -> bool:
+        def are_defaults(key, value):
             default_value = {"json": None}.get(key, None)
             return value == default_value
 
@@ -76,7 +84,7 @@ class Case:
             args_repr += ", {printed_kwargs}".format(printed_kwargs=printed_kwargs)
         return "requests.{method}({args_repr})".format(method=method, args_repr=args_repr)
 
-    def _get_base_url(self, base_url: Optional[str] = None) -> str:
+    def _get_base_url(self, base_url = None):
         if base_url is None:
             if self.base_url is not None:
                 base_url = self.base_url
@@ -87,7 +95,7 @@ class Case:
                 )
         return base_url
 
-    def as_requests_kwargs(self, base_url: Optional[str] = None) -> Dict[str, Any]:
+    def as_requests_kwargs(self, base_url = None):
         """Convert the case into a dictionary acceptable by requests."""
         base_url = self._get_base_url(base_url)
         formatted_path = self.formatted_path.lstrip("/")  # pragma: no mutate
@@ -109,8 +117,8 @@ class Case:
         }
 
     def call(
-        self, base_url: Optional[str] = None, session: Optional[requests.Session] = None, **kwargs: Any
-    ) -> requests.Response:
+        self, base_url = None, session = None, **kwargs
+    ):
         """Make a network call with `requests`."""
         if session is None:
             session = requests.Session()
@@ -125,7 +133,7 @@ class Case:
             session.close()
         return response
 
-    def as_werkzeug_kwargs(self) -> Dict[str, Any]:
+    def as_werkzeug_kwargs(self):
         """Convert the case into a dictionary acceptable by werkzeug.Client."""
         headers = self.headers
         if self.form_data:
@@ -144,7 +152,7 @@ class Case:
             **extra,
         }
 
-    def call_wsgi(self, app: Any = None, headers: Optional[Dict[str, str]] = None, **kwargs: Any) -> WSGIResponse:
+    def call_wsgi(self, app = None, headers = None, **kwargs):
         application = app or self.app
         if application is None:
             raise RuntimeError(
@@ -161,9 +169,9 @@ class Case:
 
     def validate_response(
         self,
-        response: Union[requests.Response, WSGIResponse],
-        checks: Tuple[Callable[[Union[requests.Response, WSGIResponse], "Case"], None], ...] = ALL_CHECKS,
-    ) -> None:
+        response,
+        checks = ALL_CHECKS,
+    ):
         errors = []
         for check in checks:
             try:
@@ -175,7 +183,7 @@ class Case:
 
 
 @contextmanager
-def cookie_handler(client: werkzeug.Client, cookies: Optional[Cookies]) -> Generator[None, None, None]:
+def cookie_handler(client, cookies):
     """Set cookies required for a call."""
     if not cookies:
         yield
@@ -187,12 +195,12 @@ def cookie_handler(client: werkzeug.Client, cookies: Optional[Cookies]) -> Gener
             client.delete_cookie("localhost", key)
 
 
-def empty_object() -> Dict[str, Any]:
+def empty_object():
     return {"properties": {}, "additionalProperties": False, "type": "object", "required": []}
 
 
 @attr.s(slots=True)  # pragma: no mutate
-class Endpoint:
+class Endpoint(object):
     """A container that could be used for test cases generation."""
 
     path = attr.ib(type=str)  # pragma: no mutate
@@ -208,7 +216,7 @@ class Endpoint:
     body = attr.ib(default=None, type=Optional[Body])  # pragma: no mutate
     form_data = attr.ib(default=None, type=Optional[FormData])  # pragma: no mutate
 
-    def as_strategy(self) -> SearchStrategy:
+    def as_strategy(self):
         from ._hypothesis import get_case_strategy  # pylint: disable=import-outside-toplevel
 
         return get_case_strategy(self)
@@ -223,7 +231,7 @@ class Status(IntEnum):
 
 
 @attr.s(slots=True, repr=False)  # pragma: no mutate
-class Check:
+class Check(object):
     """Single check run result."""
 
     name = attr.ib(type=str)  # pragma: no mutate
@@ -233,7 +241,7 @@ class Check:
 
 
 @attr.s(slots=True, repr=False)  # pragma: no mutate
-class TestResult:
+class TestResult(object):
     """Result of a single test."""
 
     endpoint = attr.ib(type=Endpoint)  # pragma: no mutate
@@ -243,77 +251,77 @@ class TestResult:
     is_errored = attr.ib(default=False, type=bool)  # pragma: no mutate
     seed = attr.ib(default=None, type=Optional[int])  # pragma: no mutate
 
-    def mark_errored(self) -> None:
+    def mark_errored(self):
         self.is_errored = True
 
     @property
-    def has_errors(self) -> bool:
+    def has_errors(self):
         return bool(self.errors)
 
     @property
-    def has_failures(self) -> bool:
+    def has_failures(self):
         return any(check.value == Status.failure for check in self.checks)
 
     @property
-    def has_logs(self) -> bool:
+    def has_logs(self):
         return bool(self.logs)
 
-    def add_success(self, name: str, example: Case) -> None:
+    def add_success(self, name, example):
         self.checks.append(Check(name, Status.success, example))
 
-    def add_failure(self, name: str, example: Case, message: str) -> None:
+    def add_failure(self, name, example, message):
         self.checks.append(Check(name, Status.failure, example, message))
 
-    def add_error(self, exception: Exception, example: Optional[Case] = None) -> None:
+    def add_error(self, exception, example = None):
         self.errors.append((exception, example))
 
 
 @attr.s(slots=True, repr=False)  # pragma: no mutate
-class TestResultSet:
+class TestResultSet(object):
     """Set of multiple test results."""
 
     results = attr.ib(factory=list, type=List[TestResult])  # pragma: no mutate
 
-    def __iter__(self) -> Iterator[TestResult]:
+    def __iter__(self):
         return iter(self.results)
 
     @property
-    def is_empty(self) -> bool:
+    def is_empty(self):
         """If the result set contains no results."""
         return len(self.results) == 0
 
     @property
-    def has_failures(self) -> bool:
+    def has_failures(self):
         """If any result has any failures."""
         return any(result.has_failures for result in self)
 
     @property
-    def has_errors(self) -> bool:
+    def has_errors(self):
         """If any result has any errors."""
         return any(result.has_errors for result in self)
 
     @property
-    def has_logs(self) -> bool:
+    def has_logs(self):
         """If any result has any captured logs."""
         return any(result.has_logs for result in self)
 
-    def _count(self, predicate: Callable) -> int:
+    def _count(self, predicate):
         return sum(1 for result in self if predicate(result))
 
     @property
-    def passed_count(self) -> int:
+    def passed_count(self):
         return self._count(lambda result: not result.has_errors and not result.has_failures)
 
     @property
-    def failed_count(self) -> int:
+    def failed_count(self):
         return self._count(lambda result: result.has_failures and not result.is_errored)
 
     @property
-    def errored_count(self) -> int:
+    def errored_count(self):
         return self._count(lambda result: result.has_errors or result.is_errored)
 
     @property
-    def total(self) -> Dict[str, Dict[Union[str, Status], int]]:
+    def total(self):
         """Aggregated statistic about test results."""
         output = {}
         for item in self.results:
@@ -326,6 +334,6 @@ class TestResultSet:
         # It is better to let it fail if there is a wrong key
         return {key: dict(value) for key, value in output.items()}
 
-    def append(self, item: TestResult) -> None:
+    def append(self, item):
         """Add a new item to the results list."""
         self.results.append(item)

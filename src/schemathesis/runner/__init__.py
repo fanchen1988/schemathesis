@@ -1,3 +1,12 @@
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
+from builtins import object
+from future import standard_library
+standard_library.install_aliases()
 import ctypes
 import logging
 import threading
@@ -29,7 +38,7 @@ GenericResponse = Union[requests.Response, WSGIResponse]  # pragma: no mutate
 Check = Callable[[GenericResponse, Case], None]  # pragma: no mutate
 
 
-def get_hypothesis_settings(hypothesis_options: Optional[Dict[str, Any]] = None) -> hypothesis.settings:
+def get_hypothesis_settings(hypothesis_options = None):
     # Default settings, used as a parent settings object below
     settings = hypothesis.settings(deadline=DEFAULT_DEADLINE)
     if hypothesis_options is not None:
@@ -39,7 +48,7 @@ def get_hypothesis_settings(hypothesis_options: Optional[Dict[str, Any]] = None)
 
 # pylint: disable=too-many-instance-attributes
 @attr.s
-class BaseRunner:
+class BaseRunner(object):
     schema = attr.ib(type=BaseSchema)
     checks = attr.ib(type=Iterable[Check])
     hypothesis_settings = attr.ib(converter=get_hypothesis_settings, type=hypothesis.settings)
@@ -50,7 +59,7 @@ class BaseRunner:
     seed = attr.ib(default=None, type=Optional[int])
     exit_first = attr.ib(default=False, type=bool)
 
-    def execute(self,) -> Generator[events.ExecutionEvent, None, None]:
+    def execute(self,):
         """Common logic for all runners."""
         results = TestResultSet()
 
@@ -70,7 +79,7 @@ class BaseRunner:
 
         yield events.Finished(results=results, schema=self.schema, running_time=time.time() - initialized.start_time)
 
-    def _execute(self, results: TestResultSet) -> Generator[events.ExecutionEvent, None, None]:
+    def _execute(self, results):
         raise NotImplementedError
 
 
@@ -78,7 +87,7 @@ class BaseRunner:
 class SingleThreadRunner(BaseRunner):
     """Fast runner that runs tests sequentially in the main thread."""
 
-    def _execute(self, results: TestResultSet) -> Generator[events.ExecutionEvent, None, None]:
+    def _execute(self, results):
         auth = get_requests_auth(self.auth, self.auth_type)
         with get_session(auth, self.headers) as session:
             for endpoint, test in self.schema.get_all_tests(network_test, self.hypothesis_settings, self.seed):
@@ -98,7 +107,7 @@ class SingleThreadRunner(BaseRunner):
 
 @attr.s(slots=True)
 class SingleThreadWSGIRunner(SingleThreadRunner):
-    def _execute(self, results: TestResultSet) -> Generator[events.ExecutionEvent, None, None]:
+    def _execute(self, results):
         for endpoint, test in self.schema.get_all_tests(wsgi_test, self.hypothesis_settings, self.seed):
             for event in run_test(
                 self.schema,
@@ -116,16 +125,16 @@ class SingleThreadWSGIRunner(SingleThreadRunner):
 
 
 def _run_task(
-    test_template: Callable,
-    tasks_queue: Queue,
-    events_queue: Queue,
-    schema: BaseSchema,
-    checks: Iterable[Check],
-    settings: hypothesis.settings,
-    seed: Optional[int],
-    results: TestResultSet,
-    **kwargs: Any
-) -> None:
+    test_template,
+    tasks_queue,
+    events_queue,
+    schema,
+    checks,
+    settings,
+    seed,
+    results,
+    **kwargs
+):
     # pylint: disable=too-many-arguments
     with capture_hypothesis_output():
         while not tasks_queue.empty():
@@ -136,18 +145,18 @@ def _run_task(
 
 
 def thread_task(
-    tasks_queue: Queue,
-    events_queue: Queue,
-    schema: BaseSchema,
-    checks: Iterable[Check],
-    settings: hypothesis.settings,
-    auth: Optional[RawAuth],
-    auth_type: Optional[str],
-    headers: Optional[Dict[str, Any]],
-    seed: Optional[int],
-    results: TestResultSet,
-    kwargs: Any,
-) -> None:
+    tasks_queue,
+    events_queue,
+    schema,
+    checks,
+    settings,
+    auth,
+    auth_type,
+    headers,
+    seed,
+    results,
+    kwargs,
+):
     """A single task, that threads do.
 
     Pretty similar to the default one-thread flow, but includes communication with the main thread via the events queue.
@@ -161,20 +170,20 @@ def thread_task(
 
 
 def wsgi_thread_task(
-    tasks_queue: Queue,
-    events_queue: Queue,
-    schema: BaseSchema,
-    checks: Iterable[Check],
-    settings: hypothesis.settings,
-    seed: Optional[int],
-    results: TestResultSet,
-    kwargs: Any,
-) -> None:
+    tasks_queue,
+    events_queue,
+    schema,
+    checks,
+    settings,
+    seed,
+    results,
+    kwargs,
+):
     # pylint: disable=too-many-arguments
     _run_task(wsgi_test, tasks_queue, events_queue, schema, checks, settings, seed, results, **kwargs)
 
 
-def stop_worker(thread_id: int) -> None:
+def stop_worker(thread_id):
     """Raise an error in a thread so it is possible to asynchronously stop thread execution."""
     ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(thread_id), ctypes.py_object(SystemExit))
 
@@ -189,14 +198,14 @@ class ThreadPoolRunner(BaseRunner):
 
     workers_num = attr.ib(default=2, type=int)
 
-    def _execute(self, results: TestResultSet) -> Generator[events.ExecutionEvent, None, None]:
+    def _execute(self, results):
         """All events come from a queue where different workers push their events."""
         tasks_queue = self._get_tasks_queue()
         # Events are pushed by workers via a separate queue
         events_queue = Queue()
         workers = self._init_workers(tasks_queue, events_queue, results)
 
-        def stop_workers() -> None:
+        def stop_workers():
             for worker in workers:
                 # workers are initialized at this point and `worker.ident` is set with an integer value
                 ident = cast(int, worker.ident)
@@ -225,13 +234,13 @@ class ThreadPoolRunner(BaseRunner):
             stop_workers()
             yield events.Interrupted(results=results, schema=self.schema)
 
-    def _get_tasks_queue(self) -> Queue:
+    def _get_tasks_queue(self):
         """All endpoints are distributed among all workers via a queue."""
         tasks_queue = Queue()
         tasks_queue.queue.extend(self.schema.get_all_endpoints())
         return tasks_queue
 
-    def _init_workers(self, tasks_queue: Queue, events_queue: Queue, results: TestResultSet) -> List[threading.Thread]:
+    def _init_workers(self, tasks_queue, events_queue, results):
         """Initialize & start workers that will execute tests."""
         workers = [
             threading.Thread(
@@ -243,10 +252,10 @@ class ThreadPoolRunner(BaseRunner):
             worker.start()
         return workers
 
-    def _get_task(self) -> Callable:
+    def _get_task(self):
         return thread_task
 
-    def _get_worker_kwargs(self, tasks_queue: Queue, events_queue: Queue, results: TestResultSet) -> Dict[str, Any]:
+    def _get_worker_kwargs(self, tasks_queue, events_queue, results):
         return {
             "tasks_queue": tasks_queue,
             "events_queue": events_queue,
@@ -263,10 +272,10 @@ class ThreadPoolRunner(BaseRunner):
 
 
 class ThreadPoolWSGIRunner(ThreadPoolRunner):
-    def _get_task(self) -> Callable:
+    def _get_task(self):
         return wsgi_thread_task
 
-    def _get_worker_kwargs(self, tasks_queue: Queue, events_queue: Queue, results: TestResultSet) -> Dict[str, Any]:
+    def _get_worker_kwargs(self, tasks_queue, events_queue, results):
         return {
             "tasks_queue": tasks_queue,
             "events_queue": events_queue,
@@ -280,17 +289,24 @@ class ThreadPoolWSGIRunner(ThreadPoolRunner):
 
 
 def execute_from_schema(
-    schema: BaseSchema,
-    checks: Iterable[Check],
-    *,
-    workers_num: int = 1,
-    hypothesis_options: Optional[Dict[str, Any]] = None,
-    auth: Optional[RawAuth] = None,
-    auth_type: Optional[str] = None,
-    headers: Optional[Dict[str, Any]] = None,
-    request_timeout: Optional[int] = None,
-    seed: Optional[int] = None,
-    exit_first: bool = False) -> Generator[events.ExecutionEvent, None, None]:
+    schema,
+    checks, **_3to2kwargs):
+    if 'exit_first' in _3to2kwargs: exit_first = _3to2kwargs['exit_first']; del _3to2kwargs['exit_first']
+    else: exit_first =  False
+    if 'seed' in _3to2kwargs: seed = _3to2kwargs['seed']; del _3to2kwargs['seed']
+    else: seed =  None
+    if 'request_timeout' in _3to2kwargs: request_timeout = _3to2kwargs['request_timeout']; del _3to2kwargs['request_timeout']
+    else: request_timeout =  None
+    if 'headers' in _3to2kwargs: headers = _3to2kwargs['headers']; del _3to2kwargs['headers']
+    else: headers =  None
+    if 'auth_type' in _3to2kwargs: auth_type = _3to2kwargs['auth_type']; del _3to2kwargs['auth_type']
+    else: auth_type =  None
+    if 'auth' in _3to2kwargs: auth = _3to2kwargs['auth']; del _3to2kwargs['auth']
+    else: auth =  None
+    if 'hypothesis_options' in _3to2kwargs: hypothesis_options = _3to2kwargs['hypothesis_options']; del _3to2kwargs['hypothesis_options']
+    else: hypothesis_options =  None
+    if 'workers_num' in _3to2kwargs: workers_num = _3to2kwargs['workers_num']; del _3to2kwargs['workers_num']
+    else: workers_num =  1
     """Execute tests for the given schema.
 
     Provides the main testing loop and preparation step.
@@ -349,12 +365,12 @@ def execute_from_schema(
 
 
 def run_test(
-    schema: BaseSchema,
-    endpoint: Endpoint,
-    test: Union[Callable, InvalidSchema],
-    checks: Iterable[Check],
-    results: TestResultSet,
-    **kwargs: Any) -> Generator[events.ExecutionEvent, None, None]:
+    schema,
+    endpoint,
+    test,
+    checks,
+    results,
+    **kwargs):
     """A single test run with all error handling needed."""
     # pylint: disable=too-many-arguments
     result = TestResult(endpoint=endpoint)
@@ -406,13 +422,13 @@ def run_test(
 
 
 def execute(  # pylint: disable=too-many-arguments
-    schema_uri: str,
-    checks: Iterable[Check] = DEFAULT_CHECKS,
-    api_options: Optional[Dict[str, Any]] = None,
-    loader_options: Optional[Dict[str, Any]] = None,
-    hypothesis_options: Optional[Dict[str, Any]] = None,
-    loader: Callable = from_uri,
-) -> TestResultSet:
+    schema_uri,
+    checks = DEFAULT_CHECKS,
+    api_options = None,
+    loader_options = None,
+    hypothesis_options = None,
+    loader = from_uri,
+):
     generator = prepare(
         schema_uri=schema_uri,
         checks=checks,
@@ -427,16 +443,16 @@ def execute(  # pylint: disable=too-many-arguments
 
 
 def prepare(  # pylint: disable=too-many-arguments
-    schema_uri: str,
-    checks: Iterable[Check] = DEFAULT_CHECKS,
-    workers_num: int = 1,
-    api_options: Optional[Dict[str, Any]] = None,
-    loader_options: Optional[Dict[str, Any]] = None,
-    hypothesis_options: Optional[Dict[str, Any]] = None,
-    loader: Callable = from_uri,
-    seed: Optional[int] = None,
-    exit_first: bool = False,
-) -> Generator[events.ExecutionEvent, None, None]:
+    schema_uri,
+    checks = DEFAULT_CHECKS,
+    workers_num = 1,
+    api_options = None,
+    loader_options = None,
+    hypothesis_options = None,
+    loader = from_uri,
+    seed = None,
+    exit_first = False,
+):
     """Prepare a generator that will run test cases against the given API definition."""
     api_options = api_options or {}
     loader_options = loader_options or {}
@@ -456,8 +472,8 @@ def prepare(  # pylint: disable=too-many-arguments
 
 
 def network_test(
-    case: Case, checks: Iterable[Check], result: TestResult, session: requests.Session, request_timeout: Optional[int]
-) -> None:
+    case, checks, result, session, request_timeout
+):
     """A single test body that will be executed against the target."""
     # pylint: disable=too-many-arguments
     timeout = prepare_timeout(request_timeout)
@@ -466,13 +482,13 @@ def network_test(
 
 
 def wsgi_test(
-    case: Case,
-    checks: Iterable[Check],
-    result: TestResult,
-    auth: Optional[RawAuth],
-    auth_type: Optional[str],
-    headers: Optional[Dict[str, Any]],
-) -> None:
+    case,
+    checks,
+    result,
+    auth,
+    auth_type,
+    headers,
+):
     # pylint: disable=too-many-arguments
     headers = _prepare_wsgi_headers(headers, auth, auth_type)
     with catching_logs(LogCaptureHandler(), level=logging.DEBUG) as recorded:
@@ -482,8 +498,8 @@ def wsgi_test(
 
 
 def _prepare_wsgi_headers(
-    headers: Optional[Dict[str, Any]], auth: Optional[RawAuth], auth_type: Optional[str]
-) -> Dict[str, Any]:
+    headers, auth, auth_type
+):
     headers = headers or {}
     headers.setdefault("User-agent", USER_AGENT)
     wsgi_auth = get_wsgi_auth(auth, auth_type)
@@ -492,7 +508,7 @@ def _prepare_wsgi_headers(
     return headers
 
 
-def _run_checks(case: Case, checks: Iterable[Check], result: TestResult, response: GenericResponse) -> None:
+def _run_checks(case, checks, result, response):
     errors = []
 
     for check in checks:
@@ -508,7 +524,7 @@ def _run_checks(case: Case, checks: Iterable[Check], result: TestResult, respons
         raise get_grouped_exception(*errors)
 
 
-def prepare_timeout(timeout: Optional[int]) -> Optional[float]:
+def prepare_timeout(timeout):
     """Request timeout is in milliseconds, but `requests` uses seconds."""
     output = timeout
     if timeout is not None:
@@ -518,8 +534,8 @@ def prepare_timeout(timeout: Optional[int]) -> Optional[float]:
 
 @contextmanager
 def get_session(
-    auth: Optional[Union[HTTPDigestAuth, RawAuth]] = None, headers: Optional[Dict[str, Any]] = None
-) -> Generator[requests.Session, None, None]:
+    auth = None, headers = None
+):
     with requests.Session() as session:
         if auth is not None:
             session.auth = auth
@@ -529,13 +545,13 @@ def get_session(
         yield session
 
 
-def get_requests_auth(auth: Optional[RawAuth], auth_type: Optional[str]) -> Optional[Union[HTTPDigestAuth, RawAuth]]:
+def get_requests_auth(auth, auth_type):
     if auth and auth_type == "digest":
         return HTTPDigestAuth(*auth)
     return auth
 
 
-def get_wsgi_auth(auth: Optional[RawAuth], auth_type: Optional[str]) -> Optional[str]:
+def get_wsgi_auth(auth, auth_type):
     if auth:
         if auth_type == "digest":
             raise ValueError("Digest auth is not supported for WSGI apps")

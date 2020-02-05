@@ -1,8 +1,14 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+from future import standard_library
+standard_library.install_aliases()
 from copy import deepcopy
 from typing import Any, Dict
 
 
-def to_json_schema(schema: Dict[str, Any], nullable_name: str) -> Dict[str, Any]:
+def to_json_schema(schema, nullable_name):
     """Convert Open API parameters to JSON Schema."""
     schema = deepcopy(schema)
     if schema.get(nullable_name) is True:
@@ -23,7 +29,7 @@ def to_json_schema(schema: Dict[str, Any], nullable_name: str) -> Dict[str, Any]
     return schema
 
 
-def _handle_boundaries(schema: Dict[str, Any], boundary_name: str, boundary_exclusive_name: str) -> None:
+def _handle_boundaries(schema, boundary_name, boundary_exclusive_name):
     # Replace exclusive field only if it is True
     # if it is non boolean, then leave as is
     exclusive_maximum = schema.get(boundary_exclusive_name)
