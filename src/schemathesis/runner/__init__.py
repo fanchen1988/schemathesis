@@ -288,80 +288,80 @@ class ThreadPoolWSGIRunner(ThreadPoolRunner):
         }
 
 
-def execute_from_schema(
-    schema,
-    checks, **_3to2kwargs):
-    if 'exit_first' in _3to2kwargs: exit_first = _3to2kwargs['exit_first']; del _3to2kwargs['exit_first']
-    else: exit_first =  False
-    if 'seed' in _3to2kwargs: seed = _3to2kwargs['seed']; del _3to2kwargs['seed']
-    else: seed =  None
-    if 'request_timeout' in _3to2kwargs: request_timeout = _3to2kwargs['request_timeout']; del _3to2kwargs['request_timeout']
-    else: request_timeout =  None
-    if 'headers' in _3to2kwargs: headers = _3to2kwargs['headers']; del _3to2kwargs['headers']
-    else: headers =  None
-    if 'auth_type' in _3to2kwargs: auth_type = _3to2kwargs['auth_type']; del _3to2kwargs['auth_type']
-    else: auth_type =  None
-    if 'auth' in _3to2kwargs: auth = _3to2kwargs['auth']; del _3to2kwargs['auth']
-    else: auth =  None
-    if 'hypothesis_options' in _3to2kwargs: hypothesis_options = _3to2kwargs['hypothesis_options']; del _3to2kwargs['hypothesis_options']
-    else: hypothesis_options =  None
-    if 'workers_num' in _3to2kwargs: workers_num = _3to2kwargs['workers_num']; del _3to2kwargs['workers_num']
-    else: workers_num =  1
-    """Execute tests for the given schema.
-
-    Provides the main testing loop and preparation step.
-    """
-    if workers_num > 1:
-        if schema.app:
-            runner = ThreadPoolWSGIRunner(
-                schema=schema,
-                checks=checks,
-                hypothesis_settings=hypothesis_options,
-                auth=auth,
-                auth_type=auth_type,
-                headers=headers,
-                seed=seed,
-                workers_num=workers_num,
-                exit_first=exit_first,
-            )
-        else:
-            runner = ThreadPoolRunner(
-                schema=schema,
-                checks=checks,
-                hypothesis_settings=hypothesis_options,
-                auth=auth,
-                auth_type=auth_type,
-                headers=headers,
-                seed=seed,
-                request_timeout=request_timeout,
-                exit_first=exit_first,
-            )
-    else:
-        if schema.app:
-            runner = SingleThreadWSGIRunner(
-                schema=schema,
-                checks=checks,
-                hypothesis_settings=hypothesis_options,
-                auth=auth,
-                auth_type=auth_type,
-                headers=headers,
-                seed=seed,
-                exit_first=exit_first,
-            )
-        else:
-            runner = SingleThreadRunner(
-                schema=schema,
-                checks=checks,
-                hypothesis_settings=hypothesis_options,
-                auth=auth,
-                auth_type=auth_type,
-                headers=headers,
-                seed=seed,
-                request_timeout=request_timeout,
-                exit_first=exit_first,
-            )
-
-    yield from runner.execute()
+#def execute_from_schema(
+#    schema,
+#    checks, **_3to2kwargs):
+#    if 'exit_first' in _3to2kwargs: exit_first = _3to2kwargs['exit_first']; del _3to2kwargs['exit_first']
+#    else: exit_first =  False
+#    if 'seed' in _3to2kwargs: seed = _3to2kwargs['seed']; del _3to2kwargs['seed']
+#    else: seed =  None
+#    if 'request_timeout' in _3to2kwargs: request_timeout = _3to2kwargs['request_timeout']; del _3to2kwargs['request_timeout']
+#    else: request_timeout =  None
+#    if 'headers' in _3to2kwargs: headers = _3to2kwargs['headers']; del _3to2kwargs['headers']
+#    else: headers =  None
+#    if 'auth_type' in _3to2kwargs: auth_type = _3to2kwargs['auth_type']; del _3to2kwargs['auth_type']
+#    else: auth_type =  None
+#    if 'auth' in _3to2kwargs: auth = _3to2kwargs['auth']; del _3to2kwargs['auth']
+#    else: auth =  None
+#    if 'hypothesis_options' in _3to2kwargs: hypothesis_options = _3to2kwargs['hypothesis_options']; del _3to2kwargs['hypothesis_options']
+#    else: hypothesis_options =  None
+#    if 'workers_num' in _3to2kwargs: workers_num = _3to2kwargs['workers_num']; del _3to2kwargs['workers_num']
+#    else: workers_num =  1
+#    """Execute tests for the given schema.
+#
+#    Provides the main testing loop and preparation step.
+#    """
+#    if workers_num > 1:
+#        if schema.app:
+#            runner = ThreadPoolWSGIRunner(
+#                schema=schema,
+#                checks=checks,
+#                hypothesis_settings=hypothesis_options,
+#                auth=auth,
+#                auth_type=auth_type,
+#                headers=headers,
+#                seed=seed,
+#                workers_num=workers_num,
+#                exit_first=exit_first,
+#            )
+#        else:
+#            runner = ThreadPoolRunner(
+#                schema=schema,
+#                checks=checks,
+#                hypothesis_settings=hypothesis_options,
+#                auth=auth,
+#                auth_type=auth_type,
+#                headers=headers,
+#                seed=seed,
+#                request_timeout=request_timeout,
+#                exit_first=exit_first,
+#            )
+#    else:
+#        if schema.app:
+#            runner = SingleThreadWSGIRunner(
+#                schema=schema,
+#                checks=checks,
+#                hypothesis_settings=hypothesis_options,
+#                auth=auth,
+#                auth_type=auth_type,
+#                headers=headers,
+#                seed=seed,
+#                exit_first=exit_first,
+#            )
+#        else:
+#            runner = SingleThreadRunner(
+#                schema=schema,
+#                checks=checks,
+#                hypothesis_settings=hypothesis_options,
+#                auth=auth,
+#                auth_type=auth_type,
+#                headers=headers,
+#                seed=seed,
+#                request_timeout=request_timeout,
+#                exit_first=exit_first,
+#            )
+#
+#    yield from runner.execute()
 
 
 def run_test(
@@ -467,7 +467,7 @@ def prepare(  # pylint: disable=too-many-arguments
         seed=seed,
         workers_num=workers_num,
         exit_first=exit_first,
-        **api_options,
+        **api_options
     )
 
 

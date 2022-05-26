@@ -20,7 +20,7 @@ from .utils import WSGIResponse, are_content_types_equal, parse_content_type
 if TYPE_CHECKING:
     from .models import Case
 
-GenericResponse = Union[requests.Response, WSGIResponse]  # pragma: no mutate
+#GenericResponse = Union[requests.Response, WSGIResponse]  # pragma: no mutate
 
 
 def not_a_server_error(response, case):

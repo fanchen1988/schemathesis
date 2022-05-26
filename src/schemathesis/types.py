@@ -5,13 +5,11 @@ from __future__ import unicode_literals
 from future import standard_library
 standard_library.install_aliases()
 from builtins import object
-from pathlib import Path
 from typing import Any, Callable, Dict, List, NewType, Set, Tuple, Union
 
 from hypothesis.strategies import SearchStrategy
 
 Schema = NewType("Schema", Dict[str, Any])  # pragma: no mutate
-PathLike = Union[Path, str]  # pragma: no mutate
 
 Query = Dict[str, Any]  # pragma: no mutate
 Body = Union[Dict[str, Any], bytes]  # pragma: no mutate

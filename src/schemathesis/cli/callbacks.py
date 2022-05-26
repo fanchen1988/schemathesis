@@ -4,7 +4,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future import standard_library
 standard_library.install_aliases()
-import pathlib
+from os import path as ospath
 import re
 import sys
 from contextlib import contextmanager
@@ -28,7 +28,7 @@ def validate_schema(ctx, param, raw_value):
 
 def _verify_path(path):
     try:
-        return pathlib.Path(path).is_file()
+        return ospath.isfile(path)
     except OSError:
         # For example, path could be too long
         return False

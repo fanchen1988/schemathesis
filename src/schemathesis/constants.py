@@ -15,7 +15,7 @@ except metadata.PackageNotFoundError:
     __version__ = "dev"
 
 
-USER_AGENT = "schemathesis/{version}".format(version=__version__)
+#USER_AGENT = "schemathesis/{version}".format(version=__version__)
 
 
 class HookLocation(Enum):

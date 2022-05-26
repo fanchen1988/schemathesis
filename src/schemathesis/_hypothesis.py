@@ -5,14 +5,14 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future import standard_library
 standard_library.install_aliases()
-import asyncio
+#import asyncio
 import re
-from base64 import b64encode
+#from base64 import b64encode
 from functools import partial
 from typing import Any, Callable, Dict, Generator, Optional, Union
 from urllib.parse import quote_plus
 
-import hypothesis
+#import hypothesis
 import hypothesis.strategies as st
 from .hypothesis_jsonschema import from_schema
 from requests.exceptions import InvalidHeader  # type: ignore
@@ -21,79 +21,79 @@ from requests.utils import check_header_validity  # type: ignore
 from ._compat import handle_warnings
 from .exceptions import InvalidSchema
 from .hooks import get_hook
-from .models import Case, Endpoint
-from .types import Hook
+from .models import Case#, Endpoint
+#from .types import Hook
 
 PARAMETERS = frozenset(("path_parameters", "headers", "cookies", "query", "body", "form_data"))
 
 
-def create_test(
-    endpoint, test, settings = None, seed = None
-):
-    """Create a Hypothesis test."""
-    strategy = endpoint.as_strategy()
-    wrapped_test = hypothesis.given(case=strategy)(test)
-    if seed is not None:
-        wrapped_test = hypothesis.seed(seed)(wrapped_test)
-    original_test = get_original_test(test)
-    if asyncio.iscoroutinefunction(original_test):
-        wrapped_test.hypothesis.inner_test = make_async_test(original_test)  # type: ignore
-    if settings is not None:
-        wrapped_test = settings(wrapped_test)
-    return add_examples(wrapped_test, endpoint)
+#def create_test(
+#    endpoint, test, settings = None, seed = None
+#):
+#    """Create a Hypothesis test."""
+#    strategy = endpoint.as_strategy()
+#    wrapped_test = hypothesis.given(case=strategy)(test)
+#    if seed is not None:
+#        wrapped_test = hypothesis.seed(seed)(wrapped_test)
+#    original_test = get_original_test(test)
+#    if asyncio.iscoroutinefunction(original_test):
+#        wrapped_test.hypothesis.inner_test = make_async_test(original_test)  # type: ignore
+#    if settings is not None:
+#        wrapped_test = settings(wrapped_test)
+#    return add_examples(wrapped_test, endpoint)
 
 
-def make_test_or_exception(
-    endpoint, func, settings = None, seed = None
-):
-    try:
-        return create_test(endpoint, func, settings, seed=seed)
-    except InvalidSchema as exc:
-        return exc
+#def make_test_or_exception(
+#    endpoint, func, settings = None, seed = None
+#):
+#    try:
+#        return create_test(endpoint, func, settings, seed=seed)
+#    except InvalidSchema as exc:
+#        return exc
+#
+#
+#def get_original_test(test):
+#    """Get the original test function even if it is wrapped by `hypothesis.settings` decorator.
+#
+#    Applies only to Hypothesis pre 4.42.4 versions.
+#    """
+#    # `settings` decorator is applied
+#    if getattr(test, "_hypothesis_internal_settings_applied", False) and hypothesis.__version_info__ < (4, 42, 4):
+#        # This behavior was changed due to a bug - https://github.com/HypothesisWorks/hypothesis/issues/2160
+#        # And since Hypothesis 4.42.4 is no longer required
+#        return test._hypothesis_internal_test_function_without_warning  # type: ignore
+#    return test
+#
+#
+#def make_async_test(test):
+#    def async_run(*args, **kwargs):
+#        loop = asyncio.get_event_loop()
+#        coro = test(*args, **kwargs)
+#        future = asyncio.ensure_future(coro, loop=loop)
+#        loop.run_until_complete(future)
+#
+#    return async_run
 
 
-def get_original_test(test):
-    """Get the original test function even if it is wrapped by `hypothesis.settings` decorator.
-
-    Applies only to Hypothesis pre 4.42.4 versions.
-    """
-    # `settings` decorator is applied
-    if getattr(test, "_hypothesis_internal_settings_applied", False) and hypothesis.__version_info__ < (4, 42, 4):
-        # This behavior was changed due to a bug - https://github.com/HypothesisWorks/hypothesis/issues/2160
-        # And since Hypothesis 4.42.4 is no longer required
-        return test._hypothesis_internal_test_function_without_warning  # type: ignore
-    return test
-
-
-def make_async_test(test):
-    def async_run(*args, **kwargs):
-        loop = asyncio.get_event_loop()
-        coro = test(*args, **kwargs)
-        future = asyncio.ensure_future(coro, loop=loop)
-        loop.run_until_complete(future)
-
-    return async_run
-
-
-def get_examples(endpoint):
-    for name in PARAMETERS:
-        parameter = getattr(endpoint, name)
-        if parameter is not None and "example" in parameter:
-            with handle_warnings():
-                strategies = {
-                    other: from_schema(getattr(endpoint, other))
-                    for other in PARAMETERS - {name}
-                    if getattr(endpoint, other) is not None
-                }
-                static_parameters = {name: parameter["example"]}
-                yield _get_case_strategy(endpoint, static_parameters, strategies).example()
-
-
-def add_examples(test, endpoint):
-    """Add examples to the Hypothesis test, if they are specified in the schema."""
-    for case in get_examples(endpoint):
-        test = hypothesis.example(case)(test)
-    return test
+#def get_examples(endpoint):
+#    for name in PARAMETERS:
+#        parameter = getattr(endpoint, name)
+#        if parameter is not None and "example" in parameter:
+#            with handle_warnings():
+#                strategies = {
+#                    other: from_schema(getattr(endpoint, other))
+#                    for other in PARAMETERS - {name}
+#                    if getattr(endpoint, other) is not None
+#                }
+#                static_parameters = {name: parameter["example"]}
+#                yield _get_case_strategy(endpoint, static_parameters, strategies).example()
+#
+#
+#def add_examples(test, endpoint):
+#    """Add examples to the Hypothesis test, if they are specified in the schema."""
+#    for case in get_examples(endpoint):
+#        test = hypothesis.example(case)(test)
+#    return test
 
 
 # Adapted from http.client._is_illegal_header_value
@@ -189,7 +189,7 @@ def quote_all(parameters):
 def _get_case_strategy(
     endpoint, extra_static_parameters, strategies
 ):
-    static_parameters = {"endpoint": endpoint, **extra_static_parameters}
+    static_parameters = dict({"endpoint": endpoint}, **extra_static_parameters)
     if endpoint.method == "GET":
         if endpoint.body is not None:
             raise InvalidSchema("Body parameters are defined for GET request.")
@@ -207,16 +207,16 @@ def _apply_hooks(strategies, getter):
             strategies[key] = hook(strategy)
 
 
-def register_string_format(name, strategy):
-    if not isinstance(name, str):
-        raise TypeError("name must be of type {str}, not {type_name}".format(str=str, type_name=type(name)))
-    if not isinstance(strategy, st.SearchStrategy):
-        raise TypeError("strategy must be of type {ss}, not {st_type}".format(ss=st.SearchStrategy, st_type=type(strategy)))
-    from .hypothesis_jsonschema._from_schema import STRING_FORMATS  # pylint: disable=import-outside-toplevel
-
-    STRING_FORMATS[name] = strategy
-
-
-def init_default_strategies():
-    register_string_format("binary", st.binary())
-    register_string_format("byte", st.binary().map(lambda x: b64encode(x).decode()))
+#def register_string_format(name, strategy):
+#    if not isinstance(name, str):
+#        raise TypeError("name must be of type {str}, not {type_name}".format(str=str, type_name=type(name)))
+#    if not isinstance(strategy, st.SearchStrategy):
+#        raise TypeError("strategy must be of type {ss}, not {st_type}".format(ss=st.SearchStrategy, st_type=type(strategy)))
+#    from .hypothesis_jsonschema._from_schema import STRING_FORMATS  # pylint: disable=import-outside-toplevel
+#
+#    STRING_FORMATS[name] = strategy
+#
+#
+#def init_default_strategies():
+#    register_string_format("binary", st.binary())
+#    register_string_format("byte", st.binary().map(lambda x: b64encode(x).decode()))

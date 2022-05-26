@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 from future import standard_library
 standard_library.install_aliases()
 from copy import deepcopy
-from typing import Any, Dict
+#from typing import Any, Dict
 
 
 def to_json_schema(schema, nullable_name):
@@ -29,11 +29,11 @@ def to_json_schema(schema, nullable_name):
     return schema
 
 
-def _handle_boundaries(schema, boundary_name, boundary_exclusive_name):
-    # Replace exclusive field only if it is True
-    # if it is non boolean, then leave as is
-    exclusive_maximum = schema.get(boundary_exclusive_name)
-    if exclusive_maximum is True:
-        schema[boundary_exclusive_name] = schema.pop(boundary_name)
-    elif exclusive_maximum is False:
-        del schema[boundary_exclusive_name]
+#def _handle_boundaries(schema, boundary_name, boundary_exclusive_name):
+#    # Replace exclusive field only if it is True
+#    # if it is non boolean, then leave as is
+#    exclusive_maximum = schema.get(boundary_exclusive_name)
+#    if exclusive_maximum is True:
+#        schema[boundary_exclusive_name] = schema.pop(boundary_name)
+#    elif exclusive_maximum is False:
+#        del schema[boundary_exclusive_name]

@@ -97,7 +97,7 @@ def from_schema(schema):
     except RecursionError:
         raise jsonschema.exceptions.RefResolutionError(
             "Could not resolve recursive references in schema='{schema}'".format(schema=schema)
-        ) from None
+        )
 
     # Now we handle as many validation keywords as we can...
     # Applying subschemata with boolean logic
@@ -294,23 +294,23 @@ def regex_patterns(draw):
 REGEX_PATTERNS = regex_patterns()
 
 STRING_FORMATS = {
-    **{name: rfc3339(name) for name in RFC3339_FORMATS},
     "date": rfc3339("full-date"),
     "time": rfc3339("full-time"),
     "email": st.emails(),
     "idn-email": st.emails(),
     "hostname": prov.domains(),
     "idn-hostname": prov.domains(),
-    "ipv4": st.ip_addresses(v=4).map(str),
-    "ipv6": st.ip_addresses(v=6).map(str),
-    **{
-        name: prov.domains().map("https://{}".format)
-        for name in ["uri", "uri-reference", "iri", "iri-reference", "uri-template"]
-    },
+    #"ipv4": st.ip_addresses(v=4).map(str),
+    #"ipv6": st.ip_addresses(v=6).map(str),
     "json-pointer": st.just(""),
     "relative-json-pointer": st.just(""),
     "regex": REGEX_PATTERNS,
 }
+STRING_FORMATS.update({name: rfc3339(name) for name in RFC3339_FORMATS})
+STRING_FORMATS.update({
+    name: prov.domains().map("https://{}".format)
+    for name in ["uri", "uri-reference", "iri", "iri-reference", "uri-template"]
+})
 
 
 def string_schema(schema):

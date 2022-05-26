@@ -4,7 +4,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future import standard_library
 standard_library.install_aliases()
-import pathlib
+from os import path as ospath
 import traceback
 from contextlib import contextmanager
 from enum import Enum
@@ -30,7 +30,7 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
 DEFAULT_CHECKS_NAMES = tuple(check.__name__ for check in checks_module.DEFAULT_CHECKS)
 ALL_CHECKS_NAMES = tuple(check.__name__ for check in checks_module.ALL_CHECKS)
-CHECKS_TYPE = click.Choice((*ALL_CHECKS_NAMES, "all"))
+CHECKS_TYPE = click.Choice(*(ALL_CHECKS_NAMES + ("all",)))
 DEFAULT_WORKERS = 1
 MAX_WORKERS = 64
 
@@ -197,7 +197,7 @@ def run(  # pylint: disable=too-many-arguments
 
     with abort_on_network_errors():
         options.update({"checks": selected_checks, "workers_num": workers_num})
-        if pathlib.Path(schema).is_file():
+        if ospath.isfile(schema):
             options["loader"] = from_path
         elif app is not None and not urlparse(schema).netloc:
             # If `schema` is not an existing filesystem path or an URL then it is considered as an endpoint with

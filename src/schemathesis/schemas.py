@@ -24,19 +24,19 @@ from typing import Any, Callable, Dict, Generator, Iterator, List, Optional, Tup
 from urllib.parse import urljoin, urlsplit
 
 import attr
-import hypothesis
+#import hypothesis
 import jsonschema
 import yaml
 from requests.structures import CaseInsensitiveDict
 
-from ._hypothesis import make_test_or_exception
+#from ._hypothesis import make_test_or_exception
 from .constants import HookLocation
 from .converter import to_json_schema
 from .exceptions import InvalidSchema
 from .filters import should_skip_by_tag, should_skip_endpoint, should_skip_method
 from .models import Endpoint, empty_object
 from .types import Filter, Hook
-from .utils import NOT_SET, StringDatesYAMLLoader
+from .utils import StringDatesYAMLLoader#, NOT_SET
 
 
 @lru_cache()
@@ -66,13 +66,13 @@ class BaseSchema(Mapping):
     def __len__(self):
         return len(self.endpoints)
 
-    @property  # pragma: no mutate
-    def spec_version(self):
-        raise NotImplementedError
+    #@property  # pragma: no mutate
+    #def spec_version(self):
+    #    raise NotImplementedError
 
-    @property  # pragma: no mutate
-    def verbose_name(self):
-        raise NotImplementedError
+    #@property  # pragma: no mutate
+    #def verbose_name(self):
+    #    raise NotImplementedError
 
     @property
     def endpoints(self):
@@ -89,43 +89,43 @@ class BaseSchema(Mapping):
             self._resolver = jsonschema.RefResolver(self.location or "", self.raw_schema, handlers={"": load_file})
         return self._resolver
 
-    @property
-    def endpoints_count(self):
-        return len(list(self.get_all_endpoints()))
+    #@property
+    #def endpoints_count(self):
+    #    return len(list(self.get_all_endpoints()))
 
     def get_all_endpoints(self):
         raise NotImplementedError
 
-    def get_all_tests(
-        self, func, settings = None, seed = None
-    ):
-        """Generate all endpoints and Hypothesis tests for them."""
-        for endpoint in self.get_all_endpoints():
-            test = make_test_or_exception(endpoint, func, settings, seed)
-            yield endpoint, test
+    #def get_all_tests(
+    #    self, func, settings = None, seed = None
+    #):
+    #    """Generate all endpoints and Hypothesis tests for them."""
+    #    for endpoint in self.get_all_endpoints():
+    #        test = make_test_or_exception(endpoint, func, settings, seed)
+    #        yield endpoint, test
 
-    def parametrize(
-        self, method = NOT_SET, endpoint = NOT_SET, tag = NOT_SET
-    ):
-        """Mark a test function as a parametrized one."""
-        if method is NOT_SET:
-            method = self.method
-        if endpoint is NOT_SET:
-            endpoint = self.endpoint
-        if tag is NOT_SET:
-            tag = self.tag
+    #def parametrize(
+    #    self, method = NOT_SET, endpoint = NOT_SET, tag = NOT_SET
+    #):
+    #    """Mark a test function as a parametrized one."""
+    #    if method is NOT_SET:
+    #        method = self.method
+    #    if endpoint is NOT_SET:
+    #        endpoint = self.endpoint
+    #    if tag is NOT_SET:
+    #        tag = self.tag
 
-        def wrapper(func):
-            func._schemathesis_test = self.__class__(  # type: ignore
-                self.raw_schema, base_url=self.base_url, method=method, endpoint=endpoint, tag=tag
-            )
-            return func
+    #    def wrapper(func):
+    #        func._schemathesis_test = self.__class__(  # type: ignore
+    #            self.raw_schema, base_url=self.base_url, method=method, endpoint=endpoint, tag=tag
+    #        )
+    #        return func
 
-        return wrapper
+    #    return wrapper
 
-    def _get_response_schema(self, definition):
-        """Extract response schema from `responses`."""
-        raise NotImplementedError
+    #def _get_response_schema(self, definition):
+    #    """Extract response schema from `responses`."""
+    #    raise NotImplementedError
 
     def register_hook(self, place, hook):
         key = HookLocation[place]
@@ -143,13 +143,13 @@ class SwaggerV20(BaseSchema):
         info = self.raw_schema["info"]
         return "{cls_name} for {title} ({version})".format(cls_name=self.__class__.__name__, title=info['title'], version=info['version'])
 
-    @property
-    def spec_version(self):
-        return self.raw_schema["swagger"]
+    #@property
+    #def spec_version(self):
+    #    return self.raw_schema["swagger"]
 
-    @property
-    def verbose_name(self):
-        return "Swagger {spec_version}".format(spec_version=self.spec_version)
+    #@property
+    #def verbose_name(self):
+    #    return "Swagger {spec_version}".format(spec_version=self.spec_version)
 
     @property
     def base_path(self):
@@ -251,13 +251,13 @@ class SwaggerV20(BaseSchema):
             if not (key == "required" and not isinstance(value, list))
         }
 
-    @overload  # pragma: no mutate
-    def resolve(self, item):  # pylint: disable=function-redefined
-        pass
+    #@overload  # pragma: no mutate
+    #def resolve(self, item):  # pylint: disable=function-redefined
+    #    pass
 
-    @overload  # pragma: no mutate
-    def resolve(self, item):  # pylint: disable=function-redefined
-        pass
+    #@overload  # pragma: no mutate
+    #def resolve(self, item):  # pylint: disable=function-redefined
+    #    pass
 
     # pylint: disable=function-redefined
     def resolve(self, item):
@@ -278,20 +278,20 @@ class SwaggerV20(BaseSchema):
         """Parse schema extension, e.g. "x-nullable" field."""
         return to_json_schema(item, self.nullable_name)
 
-    def _get_response_schema(self, definition):
-        return definition.get("schema")
+    #def _get_response_schema(self, definition):
+    #    return definition.get("schema")
 
 
 class OpenApi30(SwaggerV20):  # pylint: disable=too-many-ancestors
     nullable_name = "nullable"
 
-    @property
-    def spec_version(self):
-        return self.raw_schema["openapi"]
+    #@property
+    #def spec_version(self):
+    #    return self.raw_schema["openapi"]
 
-    @property
-    def verbose_name(self):
-        return "Open API {spec_version}".format(spec_version=self.spec_version)
+    #@property
+    #def verbose_name(self):
+    #    return "Open API {spec_version}".format(spec_version=self.spec_version)
 
     @property
     def base_path(self):
@@ -342,12 +342,12 @@ class OpenApi30(SwaggerV20):  # pylint: disable=too-many-ancestors
         # "schema" field is required for all parameters in Open API 3.0
         return super().parameter_to_json_schema(data["schema"])
 
-    def _get_response_schema(self, definition):
-        options = iter(definition.get("content", {}).values())
-        option = next(options, None)
-        if option:
-            return option["schema"]
-        return None
+    #def _get_response_schema(self, definition):
+    #    options = iter(definition.get("content", {}).values())
+    #    option = next(options, None)
+    #    if option:
+    #        return option["schema"]
+    #    return None
 
 
 def get_common_parameters(methods):

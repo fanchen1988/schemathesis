@@ -5,21 +5,21 @@ from __future__ import unicode_literals
 # pylint: disable=unused-import
 from future import standard_library
 standard_library.install_aliases()
-from contextlib import contextmanager
-from typing import Generator
-from warnings import catch_warnings, simplefilter
+#from contextlib import contextmanager
+#from typing import Generator
+#from warnings import catch_warnings, simplefilter
 
 
-@contextmanager
-def handle_warnings():
-    try:
-        from hypothesis.errors import NonInteractiveExampleWarning  # pylint: disable=import-outside-toplevel
-
-        with catch_warnings():
-            simplefilter("ignore", NonInteractiveExampleWarning)
-            yield
-    except ImportError:
-        yield
+#@contextmanager
+#def handle_warnings():
+#    try:
+#        from hypothesis.errors import NonInteractiveExampleWarning  # pylint: disable=import-outside-toplevel
+#
+#        with catch_warnings():
+#            simplefilter("ignore", NonInteractiveExampleWarning)
+#            yield
+#    except ImportError:
+#        yield
 
 
 try:
